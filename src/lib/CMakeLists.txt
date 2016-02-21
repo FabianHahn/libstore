@@ -1,7 +1,6 @@
 include(GenerateExportHeader)
 
 set(LIBSTORE_LIB_SRC
-	test.c
 )
 
 add_library(store SHARED ${LIBSTORE_LIB_SRC})
