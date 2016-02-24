@@ -2,14 +2,13 @@ include(GenerateExportHeader)
 
 set(LIBSTORE_LIB_SRC
 	memory.c
+	parser.c
 )
-
-BISON_TARGET(STORE_PARSER parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(store SHARED ${LIBSTORE_LIB_SRC} ${BISON_STORE_PARSER_OUTPUTS})
+add_library(store SHARED ${LIBSTORE_LIB_SRC})
 set_property(TARGET store PROPERTY C_STANDARD 99)
 GENERATE_EXPORT_HEADER(store
 	EXPORT_MACRO_NAME LIBSTORE_API
@@ -20,5 +19,5 @@ GENERATE_EXPORT_HEADER(store
 	NO_DEPRECATED_MACRO_NAME LIBSTORE_NO_DEPRECATED
 )
 
-add_library(storestatic STATIC ${LIBSTORE_LIB_SRC} ${BISON_STORE_PARSER_OUTPUTS})
+add_library(storestatic STATIC ${LIBSTORE_LIB_SRC})
 set_property(TARGET storestatic PROPERTY C_STANDARD 99)
