@@ -1,31 +1,45 @@
+#include <ctype.h> // isspace
+#include <stdarg.h> // va_list va_start
+#include <stdbool.h> // bool true false
 #include <stddef.h> // NULL
 
 #include "memory.h"
 #include "parser.h"
 
 typedef struct {
-	StoreDynamicString message;
+	struct {
+		int index;
+		int line;
+		int column;
+	} position;
+	StoreDynamicString error;
 	int level;
-} ParseError;
+} ParseState;
 
-static Store *parseValue(const char *input, ParseError *error);
-static Store *parseString(const char *input, ParseError *error);
-static Store *parseInt(const char *input, ParseError *error);
-static Store *parseFloat(const char *input, ParseError *error);
-static Store *parseList(const char *input, ParseError *error);
-static Store *parseStruct(const char *input, ParseError *error);
+static Store *parseValue(const char *input, ParseState *state);
+static Store *parseString(const char *input, ParseState *state);
+static Store *parseInt(const char *input, ParseState *state);
+static Store *parseFloat(const char *input, ParseState *state);
+static Store *parseList(const char *input, ParseState *state);
+static Store *parseStruct(const char *input, ParseState *state);
+static Store *parseFields(const char *input, ParseState *state);
+static char parseNextNonWhitespace(const char *input, ParseState *state);
+static void appendParseError(ParseState *state, const char *what, const char *reason, ...);
 
 StoreParseResult *StoreParse(const char *input)
 {
-	ParseError error;
-	error.message = StoreCreateDynamicStringType();
-	error.level = 0;
+	ParseState state;
+	state.position.index = 0;
+	state.position.line = 1;
+	state.position.column = 1;
+	state.error = StoreCreateDynamicStringType();
+	state.level = 0;
 
 	StoreParseResult *result = StoreAllocateMemoryType(StoreParseResult);
 
 	// Try to parse the store as a value
 	StoreDynamicString valueStoreError = StoreCreateDynamicStringType();
-	Store *valueStore = parseValue(input, &error);
+	Store *valueStore = parseValue(input, &state);
 	if(valueStore != NULL) {
 		result->status = STORE_PARSE_SUCCESS;
 		result->store = valueStore;
@@ -33,77 +47,164 @@ StoreParseResult *StoreParse(const char *input)
 		result->status = STORE_PARSE_ERROR;
 	}
 
-	StoreFreeDynamicStringType(valueStoreError);
+	StoreFreeDynamicStringType(state.error);
 
 	return result;
 }
 
-static Store *parseValue(const char *input, ParseError *error)
+/**
+ * value	: string
+ * 			| int
+ * 			| float
+ * 			| list
+ * 			| struct
+ */
+static Store *parseValue(const char *input, ParseState *state)
 {
-	ParseError valueError;
-	valueError.message = StoreCreateDynamicStringType();
-	valueError.level = error->level + 1;
+	ParseState valueState;
+	valueState.error = StoreCreateDynamicStringType();
+	valueState.level = state->level + 1;
 
-	Store *stringStore = parseString(input, &valueError);
+	valueState.position = state->position;
+	Store *stringStore = parseString(input, &valueState);
 	if(stringStore != NULL) {
-		StoreFreeDynamicStringType(valueError.message);
+		StoreFreeDynamicStringType(valueState.error);
 		return stringStore;
 	}
 
-	Store *intStore = parseInt(input, &valueError);
+	valueState.position = state->position;
+	Store *intStore = parseInt(input, &valueState);
 	if(intStore != NULL) {
-		StoreFreeDynamicStringType(valueError.message);
+		StoreFreeDynamicStringType(valueState.error);
 		return intStore;
 	}
 
-	Store *floatStore = parseFloat(input, &valueError);
+	valueState.position = state->position;
+	Store *floatStore = parseFloat(input, &valueState);
 	if(floatStore != NULL) {
-		StoreFreeDynamicStringType(valueError.message);
+		StoreFreeDynamicStringType(valueState.error);
 		return floatStore;
 	}
 
-	Store *listStore = parseList(input, &valueError);
+	valueState.position = state->position;
+	Store *listStore = parseList(input, &valueState);
 	if(listStore != NULL) {
-		StoreFreeDynamicStringType(valueError.message);
+		StoreFreeDynamicStringType(valueState.error);
 		return listStore;
 	}
 
-	Store *structStore = parseStruct(input, &valueError);
+	valueState.position = state->position;
+	Store *structStore = parseStruct(input, &valueState);
 	if(structStore != NULL) {
-		StoreFreeDynamicStringType(valueError.message);
+		StoreFreeDynamicStringType(valueState.error);
 		return structStore;
 	}
 
-	for(int i = 0; i < error->level; i++) {
-		StoreAppendDynamicString(error->message, "\t");
-	}
-	StoreAppendDynamicString(error->message, "Failed to parse value:\n%s", valueError.message);
-	StoreFreeDynamicStringType(valueError.message);
+	appendParseError(state, "value", "%s", StoreReadDynamicString(valueState.error));
+	StoreFreeDynamicStringType(valueState.error);
 
 	return NULL;
 }
 
-static Store *parseString(const char *input, ParseError *error)
+static Store *parseString(const char *input, ParseState *state)
 {
 
 }
 
-static Store *parseInt(const char *input, ParseError *error)
+static Store *parseInt(const char *input, ParseState *state)
 {
 
 }
 
-static Store *parseFloat(const char *input, ParseError *error)
+static Store *parseFloat(const char *input, ParseState *state)
 {
 
 }
 
-static Store *parseList(const char *input, ParseError *error)
+static Store *parseList(const char *input, ParseState *state)
 {
 
 }
 
-static Store *parseStruct(const char *input, ParseError *error)
+/**
+ * struct	: '{' fields '}'
+ */
+static Store *parseStruct(const char *input, ParseState *state)
+{
+	ParseState structState;
+	structState.position = state->position;
+	structState.error = StoreCreateDynamicStringType();
+	structState.level = state->level + 1;
+
+	char c = parseNextNonWhitespace(input, &structState);
+	if(c == '\0') {
+		appendParseError(state, "struct", "%s", StoreReadDynamicString(structState.error));
+		StoreFreeDynamicStringType(structState.error);
+		return NULL;
+	} else if(c != '{') {
+		appendParseError(state, "struct", "opening character must be '{'");
+		StoreFreeDynamicStringType(structState.error);
+		return NULL;
+	}
+
+	Store *structStore = parseFields(input, &structState);
+	if(structStore == NULL) {
+		appendParseError(state, "struct", "%s", StoreReadDynamicString(structState.error));
+		StoreFreeDynamicStringType(structState.error);
+		return NULL;
+	}
+
+	c = parseNextNonWhitespace(input, &structState);
+	if(c == '\0') {
+		appendParseError(state, "struct", "%s", StoreReadDynamicString(structState.error));
+		StoreFreeDynamicStringType(structState.error);
+		StoreFree(structStore);
+		return NULL;
+	} else if(c != '}') {
+		appendParseError(state, "struct", "ending character must be '}'");
+		StoreFreeDynamicStringType(structState.error);
+		StoreFree(structStore);
+		return NULL;
+	}
+
+	state->position = structState.position;
+	return structStore;
+}
+
+static Store *parseFields(const char *input, ParseState *state)
 {
 
+}
+
+static char parseNextNonWhitespace(const char *input, ParseState *state)
+{
+	while(true) {
+		char c = input[state->position.index];
+		state->position.index++;
+		state->position.column++;
+
+		if(c == '\0') {
+			appendParseError(state, "non-whitespace", "premature end of input");
+			return c;
+		} else if(!isspace(c)) {
+			return c;
+		} else if(c == '\n') {
+			state->position.line++;
+			state->position.column = 1;
+		}
+	}
+
+	return '\0';
+}
+
+static void appendParseError(ParseState *state, const char *what, const char *reason, ...)
+{
+	va_list va;
+	va_start(va, reason);
+
+	for(int i = 0; i < state->level; i++) {
+		StoreAppendDynamicString(state->error, "\t");
+	}
+	StoreAppendDynamicString(state->error, "failed to parse %s at line %d column %d:\n", what, state->position.line, state->position.column);
+	StoreAppendDynamicStringV(state->error, reason, va);
 }
