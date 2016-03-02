@@ -39,7 +39,7 @@ typedef union {
 /**
  * Struct to represent a store, respectively a node value in the tree
  */
-typedef struct {
+typedef struct Store {
 	/** The store's type */
 	StoreType type;
 	/** The store's content */
@@ -52,7 +52,7 @@ typedef struct {
  * @param stringValue	the content string
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateString(const char *stringValue);
+LIBSTORE_API Store *StoreCreateStringValue(const char *stringValue);
 
 /**
  * Creates an int store
@@ -60,7 +60,7 @@ LIBSTORE_API Store *StoreCreateString(const char *stringValue);
  * @param intValue		the content int
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateInt(int intValue);
+LIBSTORE_API Store *StoreCreateIntValue(int intValue);
 
 /**
  * Creates a float store
@@ -68,21 +68,21 @@ LIBSTORE_API Store *StoreCreateInt(int intValue);
  * @param floatValue	the content float
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateFloat(double floatValue);
+LIBSTORE_API Store *StoreCreateFloatValue(double floatValue);
 
 /**
  * Creates an empty list store
  *
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateList();
+LIBSTORE_API Store *StoreCreateListValue();
 
 /**
  * Creates an empty struct store
  *
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateStruct();
+LIBSTORE_API Store *StoreCreateStructValue();
 
 
 /**
