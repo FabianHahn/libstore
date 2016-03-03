@@ -16,8 +16,8 @@ typedef enum {
 	STORE_FLOAT,
 	/** A list value */
 	STORE_LIST,
-	/** A struct value */
-	STORE_STRUCT
+	/** A map value */
+	STORE_MAP
 } StoreType;
 
 /**
@@ -32,8 +32,8 @@ typedef union {
 	double floatValue;
 	/** A list value */
 	StoreList listValue;
-	/** An struct value */
-	StoreMap structValue;
+	/** An map value */
+	StoreMap mapValue;
 } StoreContent;
 
 /**
@@ -78,15 +78,15 @@ LIBSTORE_API Store *StoreCreateFloatValue(double floatValue);
 LIBSTORE_API Store *StoreCreateListValue();
 
 /**
- * Creates an empty struct store
+ * Creates an empty map store
  *
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateStructValue();
+LIBSTORE_API Store *StoreCreateMapValue();
 
 
 /**
- * A GDestroyNotify function to free a store node value
+ * Frees a store
  *
  * @param store		the store to free
  */
