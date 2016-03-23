@@ -37,7 +37,7 @@ static StoreDynamicString parseFloating(const char *input, ParseState *state);
 static StoreDynamicString parseExponential(const char *input, ParseState *state);
 static char parseDigit(const char *input, ParseState *state);
 static char parseDelimiter(const char *input, ParseState *state);
-static char parseNonWhitespace(const char *input, ParseState *state);
+static char parseTerminal(const char *input, ParseState *state);
 static void appendParseError(ParseState *state, const char *what, const char *reason, ...);
 
 StoreParseResult *StoreParse(const char *input)
@@ -137,7 +137,7 @@ static Store *parseInt(const char *input, ParseState *state)
 
 	StoreDynamicString intString = StoreCreateDynamicString();
 
-	char c = parseNonWhitespace(input, &intState);
+	char c = parseTerminal(input, &intState);
 	if(c == '\0') {
 		appendParseError(state, "int", "%s", StoreReadDynamicString(intState.error));
 		StoreFreeDynamicString(intState.error);
@@ -146,7 +146,7 @@ static Store *parseInt(const char *input, ParseState *state)
 	} else if(c == '-') {
 		StoreAppendDynamicString(intString, "-");
 	} else {
-		intState.position = state->position; // reset position to reread that character
+		intState.position--; // reread that character
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &intState);
@@ -178,7 +178,7 @@ static Store *parseFloat(const char *input, ParseState *state)
 
 	StoreDynamicString floatString = StoreCreateDynamicString();
 
-	char c = parseNonWhitespace(input, &floatState);
+	char c = parseTerminal(input, &floatState);
 	if(c == '\0') {
 		appendParseError(state, "float", "%s", StoreReadDynamicString(floatState.error));
 		StoreFreeDynamicString(floatState.error);
@@ -187,7 +187,7 @@ static Store *parseFloat(const char *input, ParseState *state)
 	} else if(c == '-') {
 		StoreAppendDynamicString(floatString, "-");
 	} else {
-		floatState.position = state->position; // reset position to reread that character
+		floatState.position--; // reread that character
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &floatState);
@@ -229,7 +229,7 @@ static Store *parseList(const char *input, ParseState *state)
 	listState.error = StoreCreateDynamicString();
 	listState.level = state->level + 1;
 
-	char c = parseNonWhitespace(input, &listState);
+	char c = parseTerminal(input, &listState);
 	if(c == '\0') {
 		appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
 		StoreFreeDynamicString(listState.error);
@@ -247,7 +247,7 @@ static Store *parseList(const char *input, ParseState *state)
 		return NULL;
 	}
 
-	c = parseNonWhitespace(input, &listState);
+	c = parseTerminal(input, &listState);
 	if(c == '\0') {
 		appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
 		StoreFreeDynamicString(listState.error);
@@ -266,20 +266,32 @@ static Store *parseList(const char *input, ParseState *state)
 }
 
 /**
- * elements	: value*
+ * elements	: value
+ * 			| value elements
  */
 static Store *parseElements(const char *input, ParseState *state)
 {
-	Store *listStore = StoreCreateListValue();
-	while(true) {
-		Store *valueStore = parseValue(input, state);
-		if(valueStore == NULL) {
-			break;
-		}
+	ParseState elementsState;
+	elementsState.position = state->position;
+	elementsState.error = StoreCreateDynamicString();
+	elementsState.level = state->level + 1;
 
-		StoreAppendList(listStore->content.listValue, valueStore);
+	Store *valueStore = parseValue(input, &elementsState);
+	if(valueStore == NULL) {
+		appendParseError(state, "elements", "expected value:\n%s", StoreReadDynamicString(elementsState.error));
+		StoreFreeDynamicString(elementsState.error);
+		return NULL;
 	}
 
+	Store *listStore = parseElements(input, &elementsState);
+	if(listStore == NULL) {
+		listStore = StoreCreateListValue();
+	}
+
+	StoreAppendList(listStore->content.listValue, valueStore);
+
+	StoreFreeDynamicString(elementsState.error);
+	state->position = elementsState.position;
 	return listStore;
 }
 
@@ -293,7 +305,7 @@ static Store *parseMap(const char *input, ParseState *state)
 	mapState.error = StoreCreateDynamicString();
 	mapState.level = state->level + 1;
 
-	char c = parseNonWhitespace(input, &mapState);
+	char c = parseTerminal(input, &mapState);
 	if(c == '\0') {
 		appendParseError(state, "map", "%s", StoreReadDynamicString(mapState.error));
 		StoreFreeDynamicString(mapState.error);
@@ -311,7 +323,7 @@ static Store *parseMap(const char *input, ParseState *state)
 		return NULL;
 	}
 
-	c = parseNonWhitespace(input, &mapState);
+	c = parseTerminal(input, &mapState);
 	if(c == '\0') {
 		appendParseError(state, "map", "%s", StoreReadDynamicString(mapState.error));
 		StoreFreeDynamicString(mapState.error);
@@ -330,22 +342,33 @@ static Store *parseMap(const char *input, ParseState *state)
 }
 
 /**
- * entries	: entry*
+ * entries	: entry
+ * 			| entry entries
  */
 static Store *parseEntries(const char *input, ParseState *state)
 {
-	Store *mapStore = StoreCreateMapValue();
-	while(true) {
-		Entry *entry = parseEntry(input, state);
-		if(entry == NULL) {
-			break;
-		}
+	ParseState entriesState;
+	entriesState.position = state->position;
+	entriesState.error = StoreCreateDynamicString();
+	entriesState.level = state->level + 1;
 
-		StoreInsertMap(mapStore->content.mapValue, entry->key, entry->value);
-		StoreFreeMemory(entry);
+	Entry *entry = parseEntry(input, &entriesState);
+	if(entry == NULL) {
+		appendParseError(state, "entries", "expected entry:\n%s", StoreReadDynamicString(entriesState.error));
+		StoreFreeDynamicString(entriesState.error);
+		return NULL;
 	}
 
-	return mapStore;
+	Store *entriesStore = parseEntries(input, &entriesState);
+	if(entriesStore == NULL) {
+		entriesStore = StoreCreateMapValue();
+	}
+
+	StoreInsertMap(entriesStore->content.mapValue, entry->key, entry->value);
+
+	StoreFreeDynamicString(entriesState.error);
+	state->position = entriesState.position;
+	return entriesStore;
 }
 
 /**
@@ -365,7 +388,7 @@ static Entry *parseEntry(const char *input, ParseState *state)
 		return NULL;
 	}
 
-	char c = parseNonWhitespace(input, &entryState);
+	char c = parseTerminal(input, &entryState);
 	if(c == '\0') {
 		appendParseError(state, "entry", "%s", StoreReadDynamicString(entryState.error));
 		StoreFreeDynamicString(entryState.error);
@@ -441,7 +464,7 @@ static StoreDynamicString parseFloating(const char *input, ParseState *state)
 
 	StoreDynamicString floatingString = StoreCreateDynamicString();
 
-	char c = parseNonWhitespace(input, &floatingState);
+	char c = parseTerminal(input, &floatingState);
 	if(c == '\0') {
 		appendParseError(state, "floating", "%s", StoreReadDynamicString(floatingState.error));
 		StoreFreeDynamicString(floatingState.error);
@@ -478,7 +501,7 @@ static StoreDynamicString parseExponential(const char *input, ParseState *state)
 
 	StoreDynamicString exponentialString = StoreCreateDynamicString();
 
-	char c = parseNonWhitespace(input, &exponentialState);
+	char c = parseTerminal(input, &exponentialState);
 	if(c == '\0') {
 		appendParseError(state, "exponential", "%s", StoreReadDynamicString(exponentialState.error));
 		StoreFreeDynamicString(exponentialState.error);
@@ -493,16 +516,17 @@ static StoreDynamicString parseExponential(const char *input, ParseState *state)
 		return NULL;
 	}
 
-	c = parseNonWhitespace(input, &exponentialState);
+	exponentialState.position.index++;
+	c = input[exponentialState.position.index + 1];
 	if(c == '\0') {
-		appendParseError(state, "exponential", "%s", StoreReadDynamicString(exponentialState.error));
+		appendParseError(state, "exponential", "unexpected end of input");
 		StoreFreeDynamicString(exponentialState.error);
 		StoreFreeDynamicString(exponentialString);
 		return NULL;
 	} else if(c == '+' || c == '-') {
 		StoreAppendDynamicString(exponentialString, "%c", c);
 	} else {
-		exponentialState.position = state->position; // reset position to reread that character
+		exponentialState.position.index--; // reread that character
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &exponentialState);
@@ -548,22 +572,29 @@ static char parseDelimiter(const char *input, ParseState *state)
 		return c;
 	}
 
-	appendParseError(state, "delimiter", "encountered non-delimiter '%c'", c);
 	return '\0';
 }
 
-static char parseNonWhitespace(const char *input, ParseState *state)
+static char parseTerminal(const char *input, ParseState *state)
 {
-	char c = input[state->position.index];
+	ParseState terminalState;
+	terminalState.position = state->position;
+	terminalState.level = state->level + 1;
 
-	if(!isspace(c)) {
-		state->position.index++;
-		state->position.column++;
-		return c;
+	char c;
+
+	do {
+		c = parseDelimiter(input, &terminalState);
+	} while(c != '\0');
+
+	c = input[terminalState.position.index];
+	if(c == '\0') {
+		appendParseError(state, "terminal", "encountered end of input");
+		return '\0';
 	}
 
-	appendParseError(state, "non-whitespace", "encountered whitespace character");
-	return '\0';
+	state->position = terminalState.position;
+	return c;
 }
 
 static void appendParseError(ParseState *state, const char *what, const char *reason, ...)
