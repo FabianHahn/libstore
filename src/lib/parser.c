@@ -35,6 +35,8 @@ static Entry *parseEntry(const char *input, ParseState *state);
 static StoreDynamicString parseDigits(const char *input, ParseState *state);
 static StoreDynamicString parseFloating(const char *input, ParseState *state);
 static StoreDynamicString parseExponential(const char *input, ParseState *state);
+static StoreDynamicString parseLongStringChar(const char *input, ParseState *state);
+static char parseHex(const char *input, ParseState *state);
 static char parseDigit(const char *input, ParseState *state);
 static char parseDelimiter(const char *input, ParseState *state);
 static char parseTerminal(const char *input, ParseState *state);
@@ -120,6 +122,10 @@ static Store *parseValue(const char *input, ParseState *state)
 	return NULL;
 }
 
+/**
+ * string	: simplechar+
+ * 			| '"' longstringchar* '"'
+ */
 static Store *parseString(const char *input, ParseState *state)
 {
 
@@ -146,7 +152,9 @@ static Store *parseInt(const char *input, ParseState *state)
 	} else if(c == '-') {
 		StoreAppendDynamicString(intString, "-");
 	} else {
-		intState.position--; // reread that character
+		// reread that character
+		intState.position.index--;
+		intState.position.column--;
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &intState);
@@ -187,7 +195,9 @@ static Store *parseFloat(const char *input, ParseState *state)
 	} else if(c == '-') {
 		StoreAppendDynamicString(floatString, "-");
 	} else {
-		floatState.position--; // reread that character
+		// reread that character
+		floatState.position.index--;
+		floatState.position.column--;
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &floatState);
@@ -540,6 +550,126 @@ static StoreDynamicString parseExponential(const char *input, ParseState *state)
 	StoreFreeDynamicString(exponentialState.error);
 	state->position = exponentialState.position;
 	return exponentialString;
+}
+
+/**
+ * longstringchar	: nonspecial+
+ * 					| '\' escaped
+ * 					| '\' 'u' hex hex hex hex
+ */
+static StoreDynamicString parseLongStringChar(const char *input, ParseState *state)
+{
+	StoreDynamicString longStringChar = StoreCreateDynamicString();
+
+	char c = input[state->position.index];
+
+	if(c == '\\') {
+		state->position.index++;
+		state->position.column++;
+
+		c = input[state->position.index];
+		state->position.index++;
+		state->position.column++;
+
+		switch(c) {
+			case '"':
+				StoreAppendDynamicString(longStringChar, "\"");
+			break;
+			case '\\':
+				StoreAppendDynamicString(longStringChar, "\\");
+			break;
+			case '/':
+				StoreAppendDynamicString(longStringChar, "/");
+			break;
+			case 'b':
+				StoreAppendDynamicString(longStringChar, "\b");
+			break;
+			case 'f':
+				StoreAppendDynamicString(longStringChar, "\f");
+			break;
+			case 'n':
+				StoreAppendDynamicString(longStringChar, "\n");
+				state->position.line++;
+				state->position.column = 1;
+			break;
+			case 'r':
+				StoreAppendDynamicString(longStringChar, "\r");
+			break;
+			case 't':
+				StoreAppendDynamicString(longStringChar, "\t");
+			break;
+			case 'u':
+			{
+				char u1 = parseHex(input, state);
+				if(u1 == '\0') {
+					state->position.index -= 2;
+					state->position.column -= 2;
+					appendParseError(state, "longstringchar", "expected first hex number of escaped unicode character");
+					StoreFreeDynamicString(longStringChar);
+					return NULL;
+				}
+
+				char u2 = parseHex(input, state);
+				if(u2 == '\0') {
+					state->position.index -= 3;
+					state->position.column -= 3;
+					appendParseError(state, "longstringchar", "expected second hex number of escaped unicode character");
+					StoreFreeDynamicString(longStringChar);
+					return NULL;
+				}
+
+				char u3 = parseHex(input, state);
+				if(u3 == '\0') {
+					state->position.index -= 4;
+					state->position.column -= 4;
+					appendParseError(state, "longstringchar", "expected third hex number of escaped unicode character");
+					StoreFreeDynamicString(longStringChar);
+					return NULL;
+				}
+
+				char u4 = parseHex(input, state);
+				if(u4 == '\0') {
+					state->position.index -= 5;
+					state->position.column -= 5;
+					appendParseError(state, "longstringchar", "expected fourth hex number of escaped unicode character");
+					StoreFreeDynamicString(longStringChar);
+					return NULL;
+				}
+
+				StoreAppendDynamicString(longStringChar, "<unicode=%c%c%c%c>", u1, u2, u3, u4);
+			}
+			break;
+			default:
+				state->position.index -= 2;
+				state->position.column -= 2;
+				appendParseError(state, "longstringchar", "expected escaped character, but encountered %c", c);
+				StoreFreeDynamicString(longStringChar);
+				return NULL;
+			break;
+		}
+	} else if(c == '"' || c == '\0') {
+		StoreFreeDynamicString(longStringChar);
+		return NULL;
+	} else {
+		while(c != '"' && c != '\0') {
+			StoreAppendDynamicString(longStringChar, "%c", c);
+
+			state->position.index++;
+			state->position.column++;
+
+			if(c == '\n') {
+				state->position.line++;
+				state->position.column = 1;
+			}
+		}
+	}
+
+	return longStringChar;
+}
+
+static char parseHex(const char *input, ParseState *state)
+{
+
 }
 
 static char parseDigit(const char *input, ParseState *state)
