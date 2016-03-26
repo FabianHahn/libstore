@@ -3,12 +3,19 @@ include(GenerateExportHeader)
 set(LIBSTORE_LIB_SRC
 	memory.c
 	parser.c
+	store.c
+)
+
+set(LIBSTORE_TYPES_STL_SRC
+	types/stl/list.cpp
+	types/stl/map.cpp
+	types/stl/string.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(store SHARED ${LIBSTORE_LIB_SRC})
+add_library(store SHARED ${LIBSTORE_LIB_SRC} ${LIBSTORE_TYPES_STL_SRC})
 set_property(TARGET store PROPERTY C_STANDARD 99)
 GENERATE_EXPORT_HEADER(store
 	EXPORT_MACRO_NAME LIBSTORE_API
@@ -19,5 +26,5 @@ GENERATE_EXPORT_HEADER(store
 	NO_DEPRECATED_MACRO_NAME LIBSTORE_NO_DEPRECATED
 )
 
-add_library(storestatic STATIC ${LIBSTORE_LIB_SRC})
+add_library(storestatic STATIC ${LIBSTORE_LIB_SRC} ${LIBSTORE_TYPES_STL_SRC})
 set_property(TARGET storestatic PROPERTY C_STANDARD 99)
