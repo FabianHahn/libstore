@@ -35,11 +35,14 @@ static Entry *parseEntry(const char *input, ParseState *state);
 static StoreDynamicString parseDigits(const char *input, ParseState *state);
 static StoreDynamicString parseFloating(const char *input, ParseState *state);
 static StoreDynamicString parseExponential(const char *input, ParseState *state);
+static StoreDynamicString parseShortString(const char *input, ParseState *state);
+static StoreDynamicString parseLongString(const char *input, ParseState *state);
 static StoreDynamicString parseLongStringChar(const char *input, ParseState *state);
+static char parseTerminal(const char *input, ParseState *state);
+static char parseShortStringChar(const char *input, ParseState *state);
 static char parseHex(const char *input, ParseState *state);
 static char parseDigit(const char *input, ParseState *state);
 static char parseDelimiter(const char *input, ParseState *state);
-static char parseTerminal(const char *input, ParseState *state);
 static void appendParseError(ParseState *state, const char *what, const char *reason, ...);
 
 StoreParseResult *StoreParse(const char *input)
@@ -123,12 +126,60 @@ static Store *parseValue(const char *input, ParseState *state)
 }
 
 /**
- * string	: simplechar+
- * 			| '"' longstringchar* '"'
+ * string	: simplestring
+ * 			| '"' longstring '"'
  */
 static Store *parseString(const char *input, ParseState *state)
 {
+	ParseState stringState;
+	stringState.position = state->position;
+	stringState.error = StoreCreateDynamicString();
+	stringState.level = state->level + 1;
 
+	Store *stringStore = NULL;
+
+	char c = parseTerminal(input, &stringState);
+	if(c == '\0') {
+		appendParseError(state, "string", "%s", StoreReadDynamicString(stringState.error));
+		StoreFreeDynamicString(stringState.error);
+		return NULL;
+	} else if(c == '"') {
+		StoreDynamicString longString = parseLongString(input, &stringState);
+		if(longString == NULL) {
+			appendParseError(state, "string", "%s", StoreReadDynamicString(stringState.error));
+			StoreFreeDynamicString(stringState.error);
+			return NULL;
+		}
+
+		c = parseDelimiter(input, &stringState);
+		if(c != '"') {
+			appendParseError(state, "string", "expected '\"' delimiter after longstring");
+			StoreFreeDynamicString(stringState.error);
+			StoreFreeDynamicString(longString);
+			return NULL;
+		}
+
+		stringStore = StoreCreateStringValue(StoreReadDynamicString(longString));
+		StoreFreeDynamicString(longString);
+	} else {
+		// reread that character
+		stringState.position.index--;
+		stringState.position.column--;
+
+		StoreDynamicString shortString = parseShortString(input, &stringState);
+		if(shortString == NULL) {
+			appendParseError(state, "string", "%s", StoreReadDynamicString(stringState.error));
+			StoreFreeDynamicString(stringState.error);
+			return NULL;
+		}
+
+		stringStore = StoreCreateStringValue(StoreReadDynamicString(shortString));
+		StoreFreeDynamicString(shortString);
+	}
+
+	StoreFreeDynamicString(stringState.error);
+	state->position = stringState.position;
+	return stringStore;
 }
 
 /**
@@ -151,10 +202,10 @@ static Store *parseInt(const char *input, ParseState *state)
 		return NULL;
 	} else if(c == '-') {
 		StoreAppendDynamicString(intString, "-");
-	} else {
-		// reread that character
-		intState.position.index--;
-		intState.position.column--;
+
+		// eat that character
+		intState.position.index++;
+		intState.position.column++;
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &intState);
@@ -553,6 +604,58 @@ static StoreDynamicString parseExponential(const char *input, ParseState *state)
 }
 
 /**
+ * shortstring	: shortstringchar+
+ */
+static StoreDynamicString parseShortString(const char *input, ParseState *state)
+{
+	ParseState shortStringState;
+	shortStringState.position = state->position;
+	shortStringState.error = StoreCreateDynamicString();
+	shortStringState.level = state->level + 1;
+
+	int c = parseShortStringChar(input, &shortStringState);
+	if(c == '\0') {
+		appendParseError(state, "shortstring", "%s", StoreReadDynamicString(shortStringState.error));
+		StoreFreeDynamicString(shortStringState.error);
+		return NULL;
+	}
+
+	StoreDynamicString shortString = StoreCreateDynamicString();
+	do {
+		StoreAppendDynamicString(shortString, "%c", c);
+		c = parseShortStringChar(input, &shortStringState);
+	} while(c != '\0');
+
+	state->position = shortStringState.position;
+	return shortString;
+}
+
+/**
+ * longstring	: longstringchar*
+ */
+static StoreDynamicString parseLongString(const char *input, ParseState *state)
+{
+	ParseState longStringState;
+	longStringState.position = state->position;
+	longStringState.error = StoreCreateDynamicString();
+	longStringState.level = state->level + 1;
+
+	StoreDynamicString longString = StoreCreateDynamicString();
+	while(true) {
+		StoreDynamicString longStringChar = parseLongStringChar(input, &longStringState);
+		if(longStringChar == NULL) {
+			break;
+		}
+
+		StoreAppendDynamicString(longString, "%s", StoreReadDynamicString(longStringChar));
+		StoreFreeDynamicString(longStringChar);
+	}
+
+	state->position = longStringState.position;
+	return longString;
+}
+
+/**
  * longstringchar	: nonspecial+
  * 					| '\' escaped
  * 					| '\' 'u' hex hex hex hex
@@ -667,9 +770,57 @@ static StoreDynamicString parseLongStringChar(const char *input, ParseState *sta
 	return longStringChar;
 }
 
+static char parseTerminal(const char *input, ParseState *state)
+{
+	ParseState terminalState;
+	terminalState.position = state->position;
+	terminalState.error = StoreCreateDynamicString();
+	terminalState.level = state->level + 1;
+
+	char c;
+
+	do {
+		c = parseDelimiter(input, &terminalState);
+	} while(c != '\0');
+
+	c = input[terminalState.position.index];
+	if(c == '\0') {
+		appendParseError(state, "terminal", "encountered end of input");
+		StoreFreeDynamicString(terminalState.error);
+		return '\0';
+	}
+
+	state->position = terminalState.position;
+	StoreFreeDynamicString(terminalState.error);
+	return c;
+}
+
+static char parseShortStringChar(const char *input, ParseState *state)
+{
+	char c = input[state->position.index];
+
+	if(!isspace(c) && c != ',' && c != ';' && c != '"') {
+		state->position.index++;
+		state->position.column++;
+		return c;
+	}
+
+	appendParseError(state, "shortstringchar", "encountered non-shortstringchar '%c'", c);
+	return '\0';
+}
+
 static char parseHex(const char *input, ParseState *state)
 {
+	char c = input[state->position.index];
 
+	if(isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+		state->position.index++;
+		state->position.column++;
+		return c;
+	}
+
+	appendParseError(state, "hex", "encountered non-hex '%c'", c);
+	return '\0';
 }
 
 static char parseDigit(const char *input, ParseState *state)
@@ -702,29 +853,8 @@ static char parseDelimiter(const char *input, ParseState *state)
 		return c;
 	}
 
+	appendParseError(state, "delimiter", "encountered non-delimiter '%c'", c);
 	return '\0';
-}
-
-static char parseTerminal(const char *input, ParseState *state)
-{
-	ParseState terminalState;
-	terminalState.position = state->position;
-	terminalState.level = state->level + 1;
-
-	char c;
-
-	do {
-		c = parseDelimiter(input, &terminalState);
-	} while(c != '\0');
-
-	c = input[terminalState.position.index];
-	if(c == '\0') {
-		appendParseError(state, "terminal", "encountered end of input");
-		return '\0';
-	}
-
-	state->position = terminalState.position;
-	return c;
 }
 
 static void appendParseError(ParseState *state, const char *what, const char *reason, ...)
