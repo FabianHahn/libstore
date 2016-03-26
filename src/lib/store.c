@@ -1,9 +1,10 @@
+#include <stdlib.h> // free
 #include <string.h>
 
 #include "memory.h"
 #include "store.h"
 
-Store *StoreCreateString(const char *stringValue)
+Store *StoreCreateStringValue(const char *stringValue)
 {
 	Store *store = StoreAllocateMemoryType(Store);
 	store->type = STORE_STRING;
@@ -12,7 +13,7 @@ Store *StoreCreateString(const char *stringValue)
 	return store;
 }
 
-Store *StoreCreateInt(int intValue)
+Store *StoreCreateIntValue(int intValue)
 {
 	Store *store = StoreAllocateMemoryType(Store);
 	store->type = STORE_INT;
@@ -21,7 +22,7 @@ Store *StoreCreateInt(int intValue)
 	return store;
 }
 
-Store *StoreCreateFloat(double floatValue)
+Store *StoreCreateFloatValue(double floatValue)
 {
 	Store *store = StoreAllocateMemoryType(Store);
 	store->type = STORE_FLOAT;
@@ -30,20 +31,20 @@ Store *StoreCreateFloat(double floatValue)
 	return store;
 }
 
-Store *StoreCreateList()
+Store *StoreCreateListValue()
 {
 	Store *store = StoreAllocateMemoryType(Store);
 	store->type = STORE_LIST;
-	store->content.listValue = StoreCreateListType();
+	store->content.listValue = StoreCreateList();
 
 	return store;
 }
 
-Store *StoreCreateStruct()
+Store *StoreCreateMapValue()
 {
 	Store *store = StoreAllocateMemoryType(Store);
-	store->type = STORE_STRUCT;
-	store->content.structValue = StoreCreateMapType();
+	store->type = STORE_MAP;
+	store->content.mapValue = StoreCreateMap();
 
 	return store;
 }
@@ -55,10 +56,10 @@ void StoreFree(Store *store)
 			free(store->content.stringValue);
 		break;
 		case STORE_LIST:
-			StoreFreeListType(store->content.listValue);
+			StoreFreeList(store->content.listValue);
 		break;
-		case STORE_STRUCT:
-			StoreFreeMapType(store->content.structValue);
+		case STORE_MAP:
+			StoreFreeMap(store->content.mapValue);
 		break;
 		default:
 			// No need to free ints or doubles
