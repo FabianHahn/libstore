@@ -245,10 +245,10 @@ static Store *parseFloat(const char *input, ParseState *state)
 		return NULL;
 	} else if(c == '-') {
 		StoreAppendDynamicString(floatString, "-");
-	} else {
-		// reread that character
-		floatState.position.index--;
-		floatState.position.column--;
+
+		// eat that character
+		floatState.position.index++;
+		floatState.position.column++;
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &floatState);
@@ -514,7 +514,7 @@ static StoreDynamicString parseDigits(const char *input, ParseState *state)
 }
 
 /**
- * floating	: '.' digits
+ * floating	: '.' digits?
  */
 static StoreDynamicString parseFloating(const char *input, ParseState *state)
 {
@@ -525,24 +525,24 @@ static StoreDynamicString parseFloating(const char *input, ParseState *state)
 
 	StoreDynamicString floatingString = StoreCreateDynamicString();
 
-	char c = parseTerminal(input, &floatingState);
+	char c = input[floatingState.position.index];
 	if(c == '\0') {
-		appendParseError(state, "floating", "%s", StoreReadDynamicString(floatingState.error));
+		appendParseError(state, "floating", "unexpected end of input");
 		StoreFreeDynamicString(floatingState.error);
 		StoreFreeDynamicString(floatingString);
 		return NULL;
 	} else if(c == '.') {
 		StoreAppendDynamicString(floatingString, ".");
-	} else {
-		floatingState.position = state->position; // reset position to reread that character
+
+		// eat that character
+		floatingState.position.index++;
+		floatingState.position.column++;
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &floatingState);
-	if(digitsString == NULL) {
-		appendParseError(state, "floating", "%s", StoreReadDynamicString(floatingState.error));
-		StoreFreeDynamicString(floatingState.error);
-		StoreFreeDynamicString(floatingString);
-		return NULL;
+	if(digitsString != NULL) {
+		StoreAppendDynamicString(floatingString, "%s", StoreReadDynamicString(digitsString));
+		StoreFreeDynamicString(digitsString);
 	}
 
 	StoreFreeDynamicString(floatingState.error);
@@ -562,23 +562,26 @@ static StoreDynamicString parseExponential(const char *input, ParseState *state)
 
 	StoreDynamicString exponentialString = StoreCreateDynamicString();
 
-	char c = parseTerminal(input, &exponentialState);
+	char c = input[exponentialState.position.index];
 	if(c == '\0') {
 		appendParseError(state, "exponential", "%s", StoreReadDynamicString(exponentialState.error));
 		StoreFreeDynamicString(exponentialState.error);
 		StoreFreeDynamicString(exponentialString);
 		return NULL;
-	} else if(c == 'e' || c == 'E') {
-		StoreAppendDynamicString(exponentialString, "%c", c);
-	} else {
+	} else if(c != 'e' && c != 'E') {
 		appendParseError(state, "exponential", "expected 'e' or 'E'");
 		StoreFreeDynamicString(exponentialState.error);
 		StoreFreeDynamicString(exponentialString);
 		return NULL;
 	}
 
+	StoreAppendDynamicString(exponentialString, "%c", c);
+
+	// eat that character
 	exponentialState.position.index++;
-	c = input[exponentialState.position.index + 1];
+	exponentialState.position.column++;
+
+	c = input[exponentialState.position.index];
 	if(c == '\0') {
 		appendParseError(state, "exponential", "unexpected end of input");
 		StoreFreeDynamicString(exponentialState.error);
@@ -586,8 +589,10 @@ static StoreDynamicString parseExponential(const char *input, ParseState *state)
 		return NULL;
 	} else if(c == '+' || c == '-') {
 		StoreAppendDynamicString(exponentialString, "%c", c);
-	} else {
-		exponentialState.position.index--; // reread that character
+
+		// eat that character
+		exponentialState.position.index++;
+		exponentialState.position.column++;
 	}
 
 	StoreDynamicString digitsString = parseDigits(input, &exponentialState);
@@ -597,6 +602,9 @@ static StoreDynamicString parseExponential(const char *input, ParseState *state)
 		StoreFreeDynamicString(exponentialString);
 		return NULL;
 	}
+
+	StoreAppendDynamicString(exponentialString, "%s", StoreReadDynamicString(digitsString));
+	StoreFreeDynamicString(digitsString);
 
 	StoreFreeDynamicString(exponentialState.error);
 	state->position = exponentialState.position;
