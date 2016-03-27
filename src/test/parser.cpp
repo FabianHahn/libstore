@@ -25,3 +25,4 @@ class Parser : public ::testing::Test {
 };
 
 #include "parser/parseInt.cpp"
+#include "parser/parseFloat.cpp"
