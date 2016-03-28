@@ -5,6 +5,7 @@
 #include <stdlib.h> // atoi atof
 #include <string.h> // strdup
 
+#include "encoding.h"
 #include "memory.h"
 #include "parser.h"
 
@@ -144,6 +145,10 @@ static Store *parseString(const char *input, ParseState *state)
 		StoreFreeDynamicString(stringState.error);
 		return NULL;
 	} else if(c == '"') {
+		// eat that character
+		stringState.position.index++;
+		stringState.position.column++;
+
 		StoreDynamicString longString = parseLongString(input, &stringState);
 		if(longString == NULL) {
 			appendParseError(state, "string", "%s", StoreReadDynamicString(stringState.error));
@@ -151,7 +156,7 @@ static Store *parseString(const char *input, ParseState *state)
 			return NULL;
 		}
 
-		c = parseDelimiter(input, &stringState);
+		c = input[stringState.position.index];
 		if(c != '"') {
 			appendParseError(state, "string", "expected '\"' delimiter after longstring");
 			StoreFreeDynamicString(stringState.error);
@@ -159,13 +164,13 @@ static Store *parseString(const char *input, ParseState *state)
 			return NULL;
 		}
 
+		// eat that character
+		stringState.position.index++;
+		stringState.position.column++;
+
 		stringStore = StoreCreateStringValue(StoreReadDynamicString(longString));
 		StoreFreeDynamicString(longString);
 	} else {
-		// reread that character
-		stringState.position.index--;
-		stringState.position.column--;
-
 		StoreDynamicString shortString = parseShortString(input, &stringState);
 		if(shortString == NULL) {
 			appendParseError(state, "string", "%s", StoreReadDynamicString(stringState.error));
@@ -621,7 +626,7 @@ static StoreDynamicString parseShortString(const char *input, ParseState *state)
 	shortStringState.error = StoreCreateDynamicString();
 	shortStringState.level = state->level + 1;
 
-	int c = parseShortStringChar(input, &shortStringState);
+	char c = parseShortStringChar(input, &shortStringState);
 	if(c == '\0') {
 		appendParseError(state, "shortstring", "%s", StoreReadDynamicString(shortStringState.error));
 		StoreFreeDynamicString(shortStringState.error);
@@ -634,6 +639,7 @@ static StoreDynamicString parseShortString(const char *input, ParseState *state)
 		c = parseShortStringChar(input, &shortStringState);
 	} while(c != '\0');
 
+	StoreFreeDynamicString(shortStringState.error);
 	state->position = shortStringState.position;
 	return shortString;
 }
@@ -659,6 +665,7 @@ static StoreDynamicString parseLongString(const char *input, ParseState *state)
 		StoreFreeDynamicString(longStringChar);
 	}
 
+	StoreFreeDynamicString(longStringState.error);
 	state->position = longStringState.position;
 	return longString;
 }
@@ -700,8 +707,6 @@ static StoreDynamicString parseLongStringChar(const char *input, ParseState *sta
 			break;
 			case 'n':
 				StoreAppendDynamicString(longStringChar, "\n");
-				state->position.line++;
-				state->position.column = 1;
 			break;
 			case 'r':
 				StoreAppendDynamicString(longStringChar, "\r");
@@ -747,7 +752,12 @@ static StoreDynamicString parseLongStringChar(const char *input, ParseState *sta
 					return NULL;
 				}
 
-				StoreAppendDynamicString(longStringChar, "<unicode=%c%c%c%c>", u1, u2, u3, u4);
+				char conversion[5] = {u1, u2, u3, u4, '\0'};
+				uint32_t codepoint = strtol(conversion, NULL, 16);
+				StoreDynamicString utf8 = StoreConvertUnicodeToUtf8(codepoint);
+
+				StoreAppendDynamicString(longStringChar, "%s", StoreReadDynamicString(utf8));
+				StoreFreeDynamicString(utf8);
 			}
 			break;
 			default:
@@ -762,7 +772,7 @@ static StoreDynamicString parseLongStringChar(const char *input, ParseState *sta
 		StoreFreeDynamicString(longStringChar);
 		return NULL;
 	} else {
-		while(c != '"' && c != '\0') {
+		while(c != '\\' && c != '"' && c != '\0') {
 			StoreAppendDynamicString(longStringChar, "%c", c);
 
 			state->position.index++;
@@ -772,6 +782,8 @@ static StoreDynamicString parseLongStringChar(const char *input, ParseState *sta
 				state->position.line++;
 				state->position.column = 1;
 			}
+
+			c = input[state->position.index];
 		}
 	}
 
