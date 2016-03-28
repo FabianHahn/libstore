@@ -8,6 +8,7 @@ include_directories(${LIBSTORE_LOCATION})
 set(LIBSTORE_TEST_SRC
 	libstoretest.cpp
 	parser.cpp
+	../lib/encoding.c
 	../lib/memory.c
 	../lib/parser.c
 	../lib/store.c

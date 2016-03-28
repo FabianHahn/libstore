@@ -1,6 +1,7 @@
 include(GenerateExportHeader)
 
 set(LIBSTORE_LIB_SRC
+	encoding.c
 	memory.c
 	parser.c
 	store.c
