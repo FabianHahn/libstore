@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <encoding.c>
 #include <memory.c>
 #include <parser.c>
 #include <store.c>
@@ -24,5 +25,6 @@ class Parser : public ::testing::Test {
 	  ParseState state;
 };
 
+#include "parser/parseString.cpp"
 #include "parser/parseInt.cpp"
 #include "parser/parseFloat.cpp"
