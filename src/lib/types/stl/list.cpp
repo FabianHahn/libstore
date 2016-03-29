@@ -1,3 +1,4 @@
+#include <cassert>
 #include <vector>
 
 extern "C" {
@@ -16,6 +17,20 @@ void StoreAppendList(StoreList list, Store *element)
 {
 	StlList& stlList = *static_cast<StlList *>(list);
 	stlList.push_back(element);
+}
+
+int StoreGetListSize(StoreList list)
+{
+	StlList& stlList = *static_cast<StlList *>(list);
+	return static_cast<int>(stlList.size());
+}
+
+Store *StoreGetListElement(StoreList list, int i)
+{
+	StlList& stlList = *static_cast<StlList *>(list);
+	assert(i >= 0);
+	assert(i < static_cast<int>(stlList.size()));
+	return stlList[i];
 }
 
 void StoreFreeList(StoreList list)

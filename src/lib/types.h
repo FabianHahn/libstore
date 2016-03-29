@@ -20,6 +20,8 @@ LIBSTORE_NO_EXPORT void StoreFreeDynamicString(StoreDynamicString string);
 
 LIBSTORE_NO_EXPORT StoreList StoreCreateList();
 LIBSTORE_NO_EXPORT void StoreAppendList(StoreList list, struct Store *element);
+LIBSTORE_NO_EXPORT int StoreGetListSize(StoreList list);
+LIBSTORE_NO_EXPORT struct Store *StoreGetListElement(StoreList list, int i);
 LIBSTORE_NO_EXPORT void StoreFreeList(StoreList list);
 
 LIBSTORE_NO_EXPORT StoreMap StoreCreateMap();
