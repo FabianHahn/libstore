@@ -73,9 +73,9 @@ StoreParseResult *StoreParse(const char *input)
 }
 
 /**
- * value	: string
- * 			| int
+ * value	: int
  * 			| float
+ * 			| string
  * 			| list
  * 			| struct
  */
@@ -86,16 +86,10 @@ static Store *parseValue(const char *input, ParseState *state)
 	valueState.level = state->level + 1;
 
 	valueState.position = state->position;
-	Store *stringStore = parseString(input, &valueState);
-	if(stringStore != NULL) {
-		StoreFreeDynamicString(valueState.error);
-		return stringStore;
-	}
-
-	valueState.position = state->position;
 	Store *intStore = parseInt(input, &valueState);
 	if(intStore != NULL) {
 		StoreFreeDynamicString(valueState.error);
+		state->position = valueState.position;
 		return intStore;
 	}
 
@@ -103,13 +97,23 @@ static Store *parseValue(const char *input, ParseState *state)
 	Store *floatStore = parseFloat(input, &valueState);
 	if(floatStore != NULL) {
 		StoreFreeDynamicString(valueState.error);
+		state->position = valueState.position;
 		return floatStore;
+	}
+
+	valueState.position = state->position;
+	Store *stringStore = parseString(input, &valueState);
+	if(stringStore != NULL) {
+		StoreFreeDynamicString(valueState.error);
+		state->position = valueState.position;
+		return stringStore;
 	}
 
 	valueState.position = state->position;
 	Store *listStore = parseList(input, &valueState);
 	if(listStore != NULL) {
 		StoreFreeDynamicString(valueState.error);
+		state->position = valueState.position;
 		return listStore;
 	}
 
@@ -117,12 +121,12 @@ static Store *parseValue(const char *input, ParseState *state)
 	Store *mapStore = parseMap(input, &valueState);
 	if(mapStore != NULL) {
 		StoreFreeDynamicString(valueState.error);
+		state->position = valueState.position;
 		return mapStore;
 	}
 
 	appendParseError(state, "value", "%s", StoreReadDynamicString(valueState.error));
 	StoreFreeDynamicString(valueState.error);
-	state->position = valueState.position;
 	return NULL;
 }
 
@@ -287,6 +291,7 @@ static Store *parseFloat(const char *input, ParseState *state)
 
 /**
  * list	: '(' elements ')'
+ * 		| '[' elements ']'
  */
 static Store *parseList(const char *input, ParseState *state)
 {
@@ -295,34 +300,72 @@ static Store *parseList(const char *input, ParseState *state)
 	listState.error = StoreCreateDynamicString();
 	listState.level = state->level + 1;
 
+	Store *listStore = NULL;
+
 	char c = parseTerminal(input, &listState);
 	if(c == '\0') {
 		appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
 		StoreFreeDynamicString(listState.error);
 		return NULL;
-	} else if(c != '{') {
-		appendParseError(state, "list", "opening character must be '('");
-		StoreFreeDynamicString(listState.error);
-		return NULL;
-	}
+	} else if(c == '(') {
+		// eat that character
+		listState.position.index++;
+		listState.position.column++;
 
-	Store *listStore = parseElements(input, &listState);
-	if(listStore == NULL) {
-		appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
-		StoreFreeDynamicString(listState.error);
-		return NULL;
-	}
+		listStore = parseElements(input, &listState);
+		if(listStore == NULL) {
+			appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
+			StoreFreeDynamicString(listState.error);
+			return NULL;
+		}
 
-	c = parseTerminal(input, &listState);
-	if(c == '\0') {
-		appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
+		c = parseTerminal(input, &listState);
+		if(c == '\0') {
+			appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
+			StoreFreeDynamicString(listState.error);
+			StoreFree(listStore);
+			return NULL;
+		} else if(c != ')') {
+			appendParseError(state, "list", "ending character must be ')'");
+			StoreFreeDynamicString(listState.error);
+			StoreFree(listStore);
+			return NULL;
+		}
+
+		// eat that character
+		listState.position.index++;
+		listState.position.column++;
+	} else if(c == '[') {
+		// eat that character
+		listState.position.index++;
+		listState.position.column++;
+
+		listStore = parseElements(input, &listState);
+		if(listStore == NULL) {
+			appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
+			StoreFreeDynamicString(listState.error);
+			return NULL;
+		}
+
+		c = parseTerminal(input, &listState);
+		if(c == '\0') {
+			appendParseError(state, "list", "%s", StoreReadDynamicString(listState.error));
+			StoreFreeDynamicString(listState.error);
+			StoreFree(listStore);
+			return NULL;
+		} else if(c != ']') {
+			appendParseError(state, "list", "ending character must be ']'");
+			StoreFreeDynamicString(listState.error);
+			StoreFree(listStore);
+			return NULL;
+		}
+
+		// eat that character
+		listState.position.index++;
+		listState.position.column++;
+	} else {
+		appendParseError(state, "list", "opening character must be '(' or '['");
 		StoreFreeDynamicString(listState.error);
-		StoreFree(listStore);
-		return NULL;
-	} else if(c != '}') {
-		appendParseError(state, "list", "ending character must be ')'");
-		StoreFreeDynamicString(listState.error);
-		StoreFree(listStore);
 		return NULL;
 	}
 
@@ -332,8 +375,7 @@ static Store *parseList(const char *input, ParseState *state)
 }
 
 /**
- * elements	: value
- * 			| value elements
+ * elements	: value*
  */
 static Store *parseElements(const char *input, ParseState *state)
 {
@@ -342,19 +384,15 @@ static Store *parseElements(const char *input, ParseState *state)
 	elementsState.error = StoreCreateDynamicString();
 	elementsState.level = state->level + 1;
 
-	Store *valueStore = parseValue(input, &elementsState);
-	if(valueStore == NULL) {
-		appendParseError(state, "elements", "expected value:\n%s", StoreReadDynamicString(elementsState.error));
-		StoreFreeDynamicString(elementsState.error);
-		return NULL;
-	}
+	Store *listStore = StoreCreateListValue();
+	while(true) {
+		Store *valueStore = parseValue(input, &elementsState);
+		if(valueStore == NULL) {
+			break;
+		}
 
-	Store *listStore = parseElements(input, &elementsState);
-	if(listStore == NULL) {
-		listStore = StoreCreateListValue();
+		StoreAppendList(listStore->content.listValue, valueStore);
 	}
-
-	StoreAppendList(listStore->content.listValue, valueStore);
 
 	StoreFreeDynamicString(elementsState.error);
 	state->position = elementsState.position;
@@ -819,7 +857,7 @@ static char parseShortStringChar(const char *input, ParseState *state)
 {
 	char c = input[state->position.index];
 
-	if(!isspace(c) && c != ',' && c != ';' && c != '"') {
+	if(!isspace(c) && c != ',' && c != ';' && c != '"' && c != '(' && c != '[' && c != '{' && c != ')' && c != ']' && c != '}') {
 		state->position.index++;
 		state->position.column++;
 		return c;
