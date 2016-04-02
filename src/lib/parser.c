@@ -420,6 +420,10 @@ static Store *parseMap(const char *input, ParseState *state)
 		return NULL;
 	}
 
+	// eat that character
+	mapState.position.index++;
+	mapState.position.column++;
+
 	Store *mapStore = parseEntries(input, &mapState);
 	if(mapStore == NULL) {
 		appendParseError(state, "map", "%s", StoreReadDynamicString(mapState.error));
@@ -440,14 +444,17 @@ static Store *parseMap(const char *input, ParseState *state)
 		return NULL;
 	}
 
+	// eat that character
+	mapState.position.index++;
+	mapState.position.column++;
+
 	StoreFreeDynamicString(mapState.error);
 	state->position = mapState.position;
 	return mapStore;
 }
 
 /**
- * entries	: entry
- * 			| entry entries
+ * entries	: entry*
  */
 static Store *parseEntries(const char *input, ParseState *state)
 {
@@ -456,19 +463,16 @@ static Store *parseEntries(const char *input, ParseState *state)
 	entriesState.error = StoreCreateDynamicString();
 	entriesState.level = state->level + 1;
 
-	Entry *entry = parseEntry(input, &entriesState);
-	if(entry == NULL) {
-		appendParseError(state, "entries", "expected entry:\n%s", StoreReadDynamicString(entriesState.error));
-		StoreFreeDynamicString(entriesState.error);
-		return NULL;
-	}
+	Store *entriesStore = StoreCreateMapValue();
+	while(true) {
+		Entry *entry = parseEntry(input, &entriesState);
+		if(entry == NULL) {
+			break;
+		}
 
-	Store *entriesStore = parseEntries(input, &entriesState);
-	if(entriesStore == NULL) {
-		entriesStore = StoreCreateMapValue();
+		StoreInsertMap(entriesStore->content.mapValue, entry->key, entry->value);
+		StoreFreeMemory(entry);
 	}
-
-	StoreInsertMap(entriesStore->content.mapValue, entry->key, entry->value);
 
 	StoreFreeDynamicString(entriesState.error);
 	state->position = entriesState.position;
@@ -505,6 +509,10 @@ static Entry *parseEntry(const char *input, ParseState *state)
 		return NULL;
 	}
 
+	// eat that character
+	entryState.position.index++;
+	entryState.position.column++;
+
 	Store *valueStore = parseValue(input, &entryState);
 	if(valueStore == NULL) {
 		appendParseError(state, "entry", "%s", StoreReadDynamicString(entryState.error));
@@ -516,8 +524,10 @@ static Entry *parseEntry(const char *input, ParseState *state)
 	Entry *entry = StoreAllocateMemoryType(Entry);
 	entry->key = strdup(stringStore->content.stringValue);
 	entry->value = valueStore;
-
 	StoreFree(stringStore);
+
+	StoreFreeDynamicString(entryState.error);
+	state->position = entryState.position;
 	return entry;
 }
 
@@ -857,7 +867,7 @@ static char parseShortStringChar(const char *input, ParseState *state)
 {
 	char c = input[state->position.index];
 
-	if(!isspace(c) && c != ',' && c != ';' && c != '"' && c != '(' && c != '[' && c != '{' && c != ')' && c != ']' && c != '}') {
+	if(!isspace(c) && c != ',' && c != ';' && c != '"' && c != '(' && c != '[' && c != '{' && c != ')' && c != ']' && c != '}' && c != ':' && c != '=') {
 		state->position.index++;
 		state->position.column++;
 		return c;
