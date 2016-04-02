@@ -29,3 +29,4 @@ class Parser : public ::testing::Test {
 #include "parser/parseInt.cpp"
 #include "parser/parseFloat.cpp"
 #include "parser/parseList.cpp"
+#include "parser/parseMap.cpp"
