@@ -25,6 +25,7 @@ class Parser : public ::testing::Test {
 	  ParseState state;
 };
 
+#include "parser/parseValue.cpp"
 #include "parser/parseString.cpp"
 #include "parser/parseInt.cpp"
 #include "parser/parseFloat.cpp"
