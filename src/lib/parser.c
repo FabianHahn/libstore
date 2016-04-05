@@ -45,6 +45,7 @@ static char parseHex(const char *input, ParseState *state);
 static char parseDigit(const char *input, ParseState *state);
 static char parseDelimiter(const char *input, ParseState *state);
 static void appendParseError(ParseState *state, const char *what, const char *reason, ...);
+static bool isSeparator(char c);
 
 StoreParseResult *StoreParse(const char *input)
 {
@@ -73,11 +74,11 @@ StoreParseResult *StoreParse(const char *input)
 }
 
 /**
- * value	: int
- * 			| float
- * 			| string
- * 			| list
- * 			| struct
+ * value	: int <separator>
+ * 			| float <separator>
+ * 			| string <separator>
+ * 			| list <separator>
+ * 			| struct <separator>
  */
 static Store *parseValue(const char *input, ParseState *state)
 {
@@ -88,41 +89,66 @@ static Store *parseValue(const char *input, ParseState *state)
 	valueState.position = state->position;
 	Store *intStore = parseInt(input, &valueState);
 	if(intStore != NULL) {
-		StoreFreeDynamicString(valueState.error);
-		state->position = valueState.position;
-		return intStore;
+		char c = input[valueState.position.index];
+		if(isSeparator(c)) {
+			StoreFreeDynamicString(valueState.error);
+			state->position = valueState.position;
+			return intStore;
+		} else {
+			appendParseError(&valueState, "int", "expected termination by separator but got '%c'", c);
+		}
 	}
 
 	valueState.position = state->position;
 	Store *floatStore = parseFloat(input, &valueState);
 	if(floatStore != NULL) {
-		StoreFreeDynamicString(valueState.error);
-		state->position = valueState.position;
-		return floatStore;
+		char c = input[valueState.position.index];
+		if(isSeparator(c)) {
+			StoreFreeDynamicString(valueState.error);
+			state->position = valueState.position;
+			return floatStore;
+		} else {
+			appendParseError(&valueState, "float", "expected termination by separator but got '%c'", c);
+		}
 	}
 
 	valueState.position = state->position;
 	Store *stringStore = parseString(input, &valueState);
 	if(stringStore != NULL) {
-		StoreFreeDynamicString(valueState.error);
-		state->position = valueState.position;
-		return stringStore;
+		char c = input[valueState.position.index];
+		if(isSeparator(c)) {
+			StoreFreeDynamicString(valueState.error);
+			state->position = valueState.position;
+			return stringStore;
+		} else {
+			appendParseError(&valueState, "string", "expected termination by separator but got '%c'", c);
+		}
 	}
 
 	valueState.position = state->position;
 	Store *listStore = parseList(input, &valueState);
 	if(listStore != NULL) {
-		StoreFreeDynamicString(valueState.error);
-		state->position = valueState.position;
-		return listStore;
+		char c = input[valueState.position.index];
+		if(isSeparator(c)) {
+			StoreFreeDynamicString(valueState.error);
+			state->position = valueState.position;
+			return listStore;
+		} else {
+			appendParseError(&valueState, "list", "expected termination by separator but got '%c'", c);
+		}
 	}
 
 	valueState.position = state->position;
 	Store *mapStore = parseMap(input, &valueState);
 	if(mapStore != NULL) {
-		StoreFreeDynamicString(valueState.error);
-		state->position = valueState.position;
-		return mapStore;
+		char c = input[valueState.position.index];
+		if(isSeparator(c)) {
+			StoreFreeDynamicString(valueState.error);
+			state->position = valueState.position;
+			return mapStore;
+		} else {
+			appendParseError(&valueState, "map", "expected termination by separator but got '%c'", c);
+		}
 	}
 
 	appendParseError(state, "value", "%s", StoreReadDynamicString(valueState.error));
@@ -231,6 +257,7 @@ static Store *parseInt(const char *input, ParseState *state)
 	StoreFreeDynamicString(intState.error);
 	state->position = intState.position;
 	int intValue = atoi(StoreReadDynamicString(intString));
+	StoreFreeDynamicString(intString);
 	return StoreCreateIntValue(intValue);
 }
 
@@ -286,6 +313,7 @@ static Store *parseFloat(const char *input, ParseState *state)
 	StoreFreeDynamicString(floatState.error);
 	state->position = floatState.position;
 	double floatValue = atof(StoreReadDynamicString(floatString));
+	StoreFreeDynamicString(floatString);
 	return StoreCreateFloatValue(floatValue);
 }
 
@@ -867,7 +895,7 @@ static char parseShortStringChar(const char *input, ParseState *state)
 {
 	char c = input[state->position.index];
 
-	if(!isspace(c) && c != ',' && c != ';' && c != '"' && c != '(' && c != '[' && c != '{' && c != ')' && c != ']' && c != '}' && c != ':' && c != '=') {
+	if(!isSeparator(c)) {
 		state->position.index++;
 		state->position.column++;
 		return c;
@@ -935,4 +963,9 @@ static void appendParseError(ParseState *state, const char *what, const char *re
 	}
 	StoreAppendDynamicString(state->error, "failed to parse %s at line %d column %d:\n", what, state->position.line, state->position.column);
 	StoreAppendDynamicStringV(state->error, reason, va);
+}
+
+static bool isSeparator(char c)
+{
+	return isspace(c) || c == ',' || c == ';' || c == '"' || c == '(' || c == '[' || c == '{' || c == ')' || c == ']' || c == '}' || c == ':' || c == '=' || c == '\0';
 }
