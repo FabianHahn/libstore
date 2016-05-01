@@ -3,19 +3,26 @@
 
 #include "store.h"
 
-typedef enum {
-	STORE_PARSE_SUCCESS,
-	STORE_PARSE_ERROR
-} StoreParseResultStatus;
-
 typedef struct {
-	StoreParseResultStatus status;
-	Store *store;
-	StoreDynamicString *error;
+	int index;
 	int line;
 	int column;
-} StoreParseResult;
+} StoreParseStatePosition;
 
-StoreParseResult *StoreParse(const char *input);
+typedef struct StoreParseReportStruct {
+	bool success;
+	StoreParseStatePosition position;
+	const char *type;
+	char *message;
+	struct StoreParseReportStruct *lastSubReport;
+	struct StoreParseReportStruct *previousReport;
+} StoreParseReport;
+
+typedef struct StoreParseStateStruct {
+	StoreParseStatePosition position;
+	StoreParseReport *lastReport;
+} StoreParseState;
+
+Store *StoreParse(const char *input, StoreParseState *state);
 
 #endif
