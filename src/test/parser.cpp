@@ -14,15 +14,14 @@ class Parser : public ::testing::Test {
 		state.position.index = 0;
 		state.position.line = 1;
 		state.position.column = 1;
-		state.error = StoreCreateDynamicString();
-		state.level = 0;
+		state.lastReport = NULL;
 	  }
 
 	  virtual void TearDown() {
-		  StoreFreeDynamicString(state.error);
+
 	  }
 
-	  ParseState state;
+	  StoreParseState state;
 };
 
 #include "parser/parseValue.cpp"
