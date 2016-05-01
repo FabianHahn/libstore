@@ -84,6 +84,13 @@ LIBSTORE_API Store *StoreCreateListValue();
  */
 LIBSTORE_API Store *StoreCreateMapValue();
 
+/**
+ * Returns the type name of a store
+ *
+ * @param store	the store to retrieve the name of
+ * @result		the type name of the store, doesn't need to be freed
+ */
+LIBSTORE_API const char *StoreGetTypeName(Store *store);
 
 /**
  * Frees a store

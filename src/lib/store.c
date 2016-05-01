@@ -49,6 +49,24 @@ Store *StoreCreateMapValue()
 	return store;
 }
 
+const char *StoreGetTypeName(Store *store)
+{
+	switch(store->type) {
+		case STORE_STRING:
+			return "string";
+		case STORE_INT:
+			return "int";
+		case STORE_FLOAT:
+			return "float";
+		case STORE_LIST:
+			return "list";
+		case STORE_MAP:
+			return "map";
+		default:
+			return "<invalid store type>";
+	}
+}
+
 void StoreFree(Store *store)
 {
 	switch(store->type) {
