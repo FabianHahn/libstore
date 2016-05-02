@@ -81,7 +81,7 @@ TEST_F(Parser, parseMapMultiple)
 	Store *result = parseMap(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseMap should not return NULL";
 	ASSERT_EQ(result->type, STORE_MAP) << "parseMap should return a store of type map";
-	ASSERT_EQ(StoreGetMapSize(result->content.mapValue), 3) << "parsed map should have one entry";
+	ASSERT_EQ(StoreGetMapSize(result->content.mapValue), 3) << "parsed map should have three entries";
 
 	StoreMapIterator iter = StoreCreateMapIterator(result->content.mapValue);
 	ASSERT_TRUE(StoreIsMapIteratorValid(iter)) << "store map iterator should be valid";
