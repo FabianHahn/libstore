@@ -55,19 +55,6 @@ TEST_F(Parser, parseStringSimpleGap)
 	StoreFree(result);
 }
 
-TEST_F(Parser, parseStringSimpleOffset)
-{
-	const char *input = "  ,;  asdf";
-	const char *solution = "asdf";
-
-	Store *result = parseString(input, &state);
-	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
-	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
-	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
-	StoreFree(result);
-}
-
 TEST_F(Parser, parseStringLongButSimple)
 {
 	const char *input = "\"longstring\"";
@@ -149,19 +136,14 @@ TEST_F(Parser, parseStringLongEmpty)
 	StoreFree(result);
 }
 
-TEST_F(Parser, parseStringLongOffset)
+TEST_F(Parser, parseStringInvalid)
 {
-	const char *input = "  ,;  \"hello world\" ;,  ";
-	const char *solution = "hello world";
+	const char *input = "=";
 
 	Store *result = parseString(input, &state);
-	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
-	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
-	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	ASSERT_EQ(state.position.index, 19) << "index should not have moved past suffix offset";
-	ASSERT_EQ(state.position.column, 20) << "column should not have moved past suffix offset";
-
-	StoreFree(result);
+	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }
 
 TEST_F(Parser, parseStringInvalidEmpty)
@@ -170,6 +152,18 @@ TEST_F(Parser, parseStringInvalidEmpty)
 
 	Store *result = parseString(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
+
+TEST_F(Parser, parseStringInvalidOffset)
+{
+	const char *input = "  ,;  asdf ";
+
+	Store *result = parseString(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }
 
 TEST_F(Parser, parseStringInvalidUnclosed)
@@ -178,6 +172,8 @@ TEST_F(Parser, parseStringInvalidUnclosed)
 
 	Store *result = parseString(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }
 
 TEST_F(Parser, parseStringInvalidEscaped)
@@ -186,6 +182,8 @@ TEST_F(Parser, parseStringInvalidEscaped)
 
 	Store *result = parseString(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }
 
 TEST_F(Parser, parseStringInvalidEncoded)
@@ -194,4 +192,6 @@ TEST_F(Parser, parseStringInvalidEncoded)
 
 	Store *result = parseString(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }

@@ -22,20 +22,6 @@ TEST_F(Parser, parseMapEmptyGap)
 	StoreFree(result);
 }
 
-TEST_F(Parser, parseMapEmptyOffset)
-{
-	const char *input = "  , ; {}  ";
-
-	Store *result = parseMap(input, &state);
-	ASSERT_TRUE(result != NULL) << "parseMap should not return NULL";
-	ASSERT_EQ(result->type, STORE_MAP) << "parseMap should return a store of type map";
-	ASSERT_EQ(StoreGetMapSize(result->content.mapValue), 0) << "parsed map should be empty";
-	ASSERT_EQ(state.position.index, 8) << "index should not have moved past suffix offset";
-	ASSERT_EQ(state.position.column, 9) << "column should not have moved past suffix offset";
-
-	StoreFree(result);
-}
-
 TEST_F(Parser, parseMapSimple)
 {
 	const char *input = "{hello = world}";
@@ -130,6 +116,16 @@ TEST_F(Parser, parseMapInvalid)
 TEST_F(Parser, parseMapInvalidEmpty)
 {
 	const char *input = "";
+
+	Store *result = parseMap(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
+
+TEST_F(Parser, parseMapInvalidOffset)
+{
+	const char *input = "  , ; {}  ";
 
 	Store *result = parseMap(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";

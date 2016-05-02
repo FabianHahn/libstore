@@ -34,20 +34,6 @@ TEST_F(Parser, parseListEmptyGap)
 	StoreFree(result);
 }
 
-TEST_F(Parser, parseListOffset)
-{
-	const char *input = "  , ; ()  ";
-
-	Store *result = parseList(input, &state);
-	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
-	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
-	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parsed list should be empty";
-	ASSERT_EQ(state.position.index, 8) << "index should not have moved past suffix offset";
-	ASSERT_EQ(state.position.column, 9) << "column should not have moved past suffix offset";
-
-	StoreFree(result);
-}
-
 TEST_F(Parser, parseListMultipleElements)
 {
 	const char *input = "(the answer is 42)";
@@ -115,6 +101,18 @@ TEST_F(Parser, parseListInvalidEmpty)
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }
+
+
+TEST_F(Parser, parseListOffset)
+{
+	const char *input = "  , ; ()  ";
+
+	Store *result = parseList(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
+
 
 TEST_F(Parser, parseListInvalidUnclosed)
 {

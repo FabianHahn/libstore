@@ -56,18 +56,26 @@ Store *StoreParse(const char *input, StoreParseState *state)
 }
 
 /**
- * value	: int <separator>
- * 			| float <separator>
- * 			| string <separator>
- * 			| list <separator>
- * 			| struct <separator>
+ * value	: nonterminal* int separator
+ * 			| nonterminal* float separator
+ * 			| nonterminal* string separator
+ * 			| nonterminal* list separator
+ * 			| nonterminal* struct separator
  */
 static Store *parseValue(const char *input, StoreParseState *state)
 {
 	StoreParseState valueState;
 	valueState.lastReport = NULL;
-
 	valueState.position = state->position;
+
+	char c = parseTerminal(input, &valueState);
+	if(c == '\0') {
+		report(false, state, &valueState, "value", "expected terminal");
+		return NULL;
+	}
+	StoreParseStatePosition terminalPosition = valueState.position;
+
+	valueState.position = terminalPosition;
 	Store *intStore = parseInt(input, &valueState);
 	if(intStore != NULL) {
 		char c = input[valueState.position.index];
@@ -84,7 +92,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 		}
 	}
 
-	valueState.position = state->position;
+	valueState.position = terminalPosition;
 	Store *floatStore = parseFloat(input, &valueState);
 	if(floatStore != NULL) {
 		char c = input[valueState.position.index];
@@ -101,7 +109,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 		}
 	}
 
-	valueState.position = state->position;
+	valueState.position = terminalPosition;
 	Store *stringStore = parseString(input, &valueState);
 	if(stringStore != NULL) {
 		char c = input[valueState.position.index];
@@ -118,7 +126,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 		}
 	}
 
-	valueState.position = state->position;
+	valueState.position = terminalPosition;
 	Store *listStore = parseList(input, &valueState);
 	if(listStore != NULL) {
 		char c = input[valueState.position.index];
@@ -135,7 +143,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 		}
 	}
 
-	valueState.position = state->position;
+	valueState.position = terminalPosition;
 	Store *mapStore = parseMap(input, &valueState);
 	if(mapStore != NULL) {
 		char c = input[valueState.position.index];
@@ -169,11 +177,8 @@ static Store *parseString(const char *input, StoreParseState *state)
 	Store *stringStore = NULL;
 
 	bool isShort = true;
-	char c = parseTerminal(input, &stringState);
-	if(c == '\0') {
-		report(false, state, &stringState, "string", "expected terminal");
-		return NULL;
-	} else if(c == '"') {
+	char c = input[stringState.position.index];
+	if(c == '"') {
 		isShort = false;
 
 		// eat that character
@@ -227,12 +232,8 @@ static Store *parseInt(const char *input, StoreParseState *state)
 	StoreDynamicString intString = StoreCreateDynamicString();
 
 	bool isNegative = false;
-	char c = parseTerminal(input, &intState);
-	if(c == '\0') {
-		report(false, state, &intState, "int", "expected terminal");
-		StoreFreeDynamicString(intString);
-		return NULL;
-	} else if(c == '-') {
+	char c = input[intState.position.index];
+	if(c == '-') {
 		StoreAppendDynamicString(intString, "-");
 
 		// eat that character
@@ -271,12 +272,8 @@ static Store *parseFloat(const char *input, StoreParseState *state)
 	StoreDynamicString floatString = StoreCreateDynamicString();
 
 	bool isNegative = false;
-	char c = parseTerminal(input, &floatState);
-	if(c == '\0') {
-		report(false, state, &floatState, "float", "expected terminal");
-		StoreFreeDynamicString(floatString);
-		return NULL;
-	} else if(c == '-') {
+	char c = input[floatState.position.index];
+	if(c == '-') {
 		StoreAppendDynamicString(floatString, "-");
 
 		// eat that character
@@ -332,11 +329,8 @@ static Store *parseList(const char *input, StoreParseState *state)
 	Store *listStore = NULL;
 
 	bool isSquare = false;
-	char c = parseTerminal(input, &listState);
-	if(c == '\0') {
-		report(false, state, &listState, "list", "expected terminal");
-		return NULL;
-	} else if(c == '(') {
+	char c = input[listState.position.index];
+	if(c == '(') {
 		// eat that character
 		listState.position.index++;
 		listState.position.column++;
@@ -389,7 +383,7 @@ static Store *parseList(const char *input, StoreParseState *state)
 
 		isSquare = true;
 	} else {
-		report(false, state, &listState, "list", "opening character must be '(' or '['");
+		report(false, state, &listState, "list", "opening character must be '(' or '[', but got '%c'", c);
 		return NULL;
 	}
 
@@ -433,11 +427,8 @@ static Store *parseMap(const char *input, StoreParseState *state)
 	mapState.position = state->position;
 	mapState.lastReport = NULL;
 
-	char c = parseTerminal(input, &mapState);
-	if(c == '\0') {
-		report(false, state, &mapState, "map", "expected terminal");
-		return NULL;
-	} else if(c != '{') {
+	char c = input[mapState.position.index];
+	if(c != '{') {
 		report(false, state, &mapState, "map", "opening character must be '{', but got '%c'", c);
 		return NULL;
 	}
@@ -500,8 +491,8 @@ static Store *parseEntries(const char *input, StoreParseState *state)
 }
 
 /**
- * entry	: string '=' value
- * 			| string ':' value
+ * entry	: nonterminal* string '=' value
+ * 			| nonterminal* string ':' value
  */
 static Entry *parseEntry(const char *input, StoreParseState *state)
 {
@@ -509,13 +500,19 @@ static Entry *parseEntry(const char *input, StoreParseState *state)
 	entryState.position = state->position;
 	entryState.lastReport = NULL;
 
+	char c = parseTerminal(input, &entryState);
+	if(c == '\0') {
+		report(false, state, &entryState, "entry", "expected terminal");
+		return NULL;
+	}
+
 	Store *stringStore = parseString(input, &entryState);
 	if(stringStore == NULL) {
 		report(false, state, &entryState, "entry", "expected key string");
 		return NULL;
 	}
 
-	char c = parseTerminal(input, &entryState);
+	c = parseTerminal(input, &entryState);
 	if(c == '\0') {
 		report(false, state, &entryState, "entry", "expected terminal");
 		StoreFree(stringStore);
@@ -870,15 +867,9 @@ static char parseTerminal(const char *input, StoreParseState *state)
 		numDelimiters++;
 	}
 
-	char c = input[terminalState.position.index];
-	if(c == '\0') {
-		report(false, state, &terminalState, "terminal", "unexpected end of input");
-		return '\0';
-	}
-
 	report(true, state, &terminalState, "terminal", "parsed terminal after %d delimiters", numDelimiters);
 	state->position = terminalState.position;
-	return c;
+	return input[terminalState.position.index];
 }
 
 static void report(bool success, StoreParseState *parentState, StoreParseState *currentState, const char *type, const char *message, ...)

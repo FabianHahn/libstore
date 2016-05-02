@@ -54,33 +54,34 @@ TEST_F(Parser, parseIntGap)
 	StoreFree(result);
 }
 
-TEST_F(Parser, parseIntOffset)
-{
-	const char *input = "  ,;  1";
-	const int solution = 1;
-
-	Store *result = parseInt(input, &state);
-	ASSERT_TRUE(result != NULL) << "parseInt should not return NULL";
-	ASSERT_EQ(result->type, STORE_INT) << "parseInt should return a store of type int";
-	ASSERT_EQ(result->content.intValue, solution) << "parseInt should parse the correct integer value";
-
-	StoreFree(result);
-}
-
-TEST_F(Parser, parseIntEmpty)
-{
-	const char *input = "";
-
-	Store *result = parseInt(input, &state);
-	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
-}
-
 TEST_F(Parser, parseIntInvalid)
 {
 	const char *input = "asdf";
 
 	Store *result = parseInt(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
+
+TEST_F(Parser, parseIntInvalidEmpty)
+{
+	const char *input = "";
+
+	Store *result = parseInt(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
+
+TEST_F(Parser, parseIntInvalidOffset)
+{
+	const char *input = "  ,;  1";
+
+	Store *result = parseInt(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }
 
 TEST_F(Parser, parseIntInvalidNegative)
@@ -89,4 +90,6 @@ TEST_F(Parser, parseIntInvalidNegative)
 
 	Store *result = parseInt(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }

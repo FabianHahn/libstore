@@ -50,6 +50,22 @@ TEST_F(Parser, parseValuePrefixFloatExp)
 	StoreFree(result);
 }
 
+TEST_F(Parser, parseValueStringOffset)
+{
+	const char *input = "  ,;  \"hello world\" ;,  ";
+	const char *solution = "hello world";
+
+	Store *result = parseValue(input, &state);
+	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
+	ASSERT_EQ(result->type, STORE_STRING) << "parseValue should return a store of type string";
+	ASSERT_STREQ(result->content.stringValue, solution) << "parseValue should parse the correct string value";
+	ASSERT_EQ(state.position.index, 19) << "index should not have moved past suffix offset";
+	ASSERT_EQ(state.position.column, 20) << "column should not have moved past suffix offset";
+
+	StoreFree(result);
+}
+
+
 TEST_F(Parser, parseValueEmptyList)
 {
 	const char *input = "()";

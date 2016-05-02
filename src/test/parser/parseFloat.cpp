@@ -188,33 +188,35 @@ TEST_F(Parser, parseFloatGap)
 	StoreFree(result);
 }
 
-TEST_F(Parser, parseFloatOffset)
-{
-	const char *input = "  ,;  1.2";
-	const double solution = 1.2;
-
-	Store *result = parseFloat(input, &state);
-	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
-	ASSERT_EQ(result->type, STORE_FLOAT) << "parseInt should return a store of type float";
-	ASSERT_EQ(result->content.floatValue, solution) << "parseInt should parse the correct float value";
-
-	StoreFree(result);
-}
-
-TEST_F(Parser, parseFloatEmpty)
-{
-	const char *input = "";
-
-	Store *result = parseFloat(input, &state);
-	ASSERT_TRUE(result == NULL) << "parseFloat should return NULL";
-}
-
 TEST_F(Parser, parseFloatInvalid)
 {
 	const char *input = "asdf";
 
 	Store *result = parseInt(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
+
+TEST_F(Parser, parseFloatInvalidEmpty)
+{
+	const char *input = "";
+
+	Store *result = parseFloat(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseFloat should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
+
+TEST_F(Parser, parseFloatInvalidOffset)
+{
+	const char *input = "  ,;  1.2";
+	const double solution = 1.2;
+
+	Store *result = parseFloat(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseFloat should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
 }
 
 TEST_F(Parser, parseFloatInvalidPureFractional)
