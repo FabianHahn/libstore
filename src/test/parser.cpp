@@ -24,6 +24,7 @@ class Parser : public ::testing::Test {
 	  StoreParseState state;
 };
 
+#include "parser/StoreParse.cpp"
 #include "parser/parseValue.cpp"
 #include "parser/parseString.cpp"
 #include "parser/parseInt.cpp"
