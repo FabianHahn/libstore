@@ -38,20 +38,56 @@ static void freeParseReport(StoreParseReport *lastReport);
 static bool isHex(char c);
 static bool isSeparator(char c);
 
+/**
+ * store	: value '\0'
+ * 			| entries '\0'
+ */
 Store *StoreParse(const char *input, StoreParseState *state)
 {
 	StoreParseState storeState;
 	storeState.position = state->position;
 	storeState.lastReport = NULL;
 
-	// Try to parse the store as a value
 	Store *valueStore = parseValue(input, &storeState);
 	if(valueStore != NULL) {
-		report(true, state, &storeState, "store", "parsed value store of type %s", StoreGetTypeName(valueStore));
-		return valueStore;
+		char c = parseTerminal(input, &storeState);
+		if(c == '\0') {
+			// make sure it's and actual EOF, not just a parseTerminal failure
+			if(input[storeState.position.index] == '\0') {
+				report(true, state, &storeState, "store", "parsed value store of type %s", StoreGetTypeName(valueStore));
+				state->position = storeState.position;
+				return valueStore;
+			}
+		}
+
+		StoreParseState valueState;
+		valueState.position = storeState.position;
+		valueState.lastReport = NULL;
+		report(false, &storeState, &valueState, "value", "expected termination by end of input, but got '%c'", c);
+		StoreFree(valueStore);
 	}
 
-	report(false, state, &storeState, "store", "expected value");
+	storeState.position = state->position;
+	Store *entriesStore = parseEntries(input, &storeState);
+	if(entriesStore != NULL) {
+		char c = parseTerminal(input, &storeState);
+		if(c == '\0') {
+			// make sure it's and actual EOF, not just a parseTerminal failure
+			if(input[storeState.position.index] == '\0') {
+				report(true, state, &storeState, "entries", "parsed entries store");
+				state->position = storeState.position;
+				return valueStore;
+			}
+		}
+
+		StoreParseState entriesState;
+		entriesState.position = storeState.position;
+		entriesState.lastReport = NULL;
+		report(false, &storeState, &entriesState, "entries", "expected termination by end of input, but got '%c'", c);
+		StoreFree(valueStore);
+	}
+
+	report(false, state, &storeState, "store", "expected value or entries");
 	return NULL;
 }
 
