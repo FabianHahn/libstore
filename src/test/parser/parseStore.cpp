@@ -1,9 +1,9 @@
-TEST_F(Parser, StoreParseValue)
+TEST_F(Parser, parseStoreValue)
 {
 	const char *input = " 123 ";
 	int solution = 123;
 
-	Store *result = StoreParse(input, &state);
+	Store *result = parseStore(input, &state);
 	ASSERT_TRUE(result != NULL) << "StoreParse should not return NULL";
 	ASSERT_EQ(result->type, STORE_INT) << "StoreParse should return a store of type int";
 	ASSERT_EQ(result->content.intValue, solution) << "StoreParse should parse the correct int value";
@@ -14,7 +14,7 @@ TEST_F(Parser, StoreParseValue)
 	assertReportSuccess("store");
 }
 
-TEST_F(Parser, StoreParseEntries)
+TEST_F(Parser, parseStoreEntries)
 {
 	const char *input = " foo = bar; baz = 3.14159265359 ";
 	const char *solution_key1 = "foo";
@@ -22,7 +22,7 @@ TEST_F(Parser, StoreParseEntries)
 	const char *solution_key2 = "baz";
 	double solution_value2 = 3.14159265359;
 
-	Store *result = StoreParse(input, &state);
+	Store *result = parseStore(input, &state);
 	ASSERT_TRUE(result != NULL) << "StoreParse should not return NULL";
 	ASSERT_EQ(result->type, STORE_MAP) << "StoreParse should return a store of type map";
 	ASSERT_EQ(StoreGetMapSize(result->content.mapValue), 2) << "parsed map should have two entries";
@@ -61,10 +61,10 @@ TEST_F(Parser, StoreParseEntries)
 	assertReportSuccess("store");
 }
 
-TEST_F(Parser, StoreParseInvalidElements)
+TEST_F(Parser, parseStoreInvalidElements)
 {
 	const char *input = " hello world ";
-	Store *result = StoreParse(input, &state);
+	Store *result = parseStore(input, &state);
 	ASSERT_TRUE(result == NULL) << "StoreParse should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";

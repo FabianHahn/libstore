@@ -18,7 +18,7 @@ public:
 	}
 
 	virtual void TearDown() {
-
+		freeParseReport(state.lastReport);
 	}
 
 protected:
@@ -39,7 +39,7 @@ protected:
 	StoreParseState state;
 };
 
-#include "parser/StoreParse.cpp"
+#include "parser/parseStore.cpp"
 #include "parser/parseValue.cpp"
 #include "parser/parseString.cpp"
 #include "parser/parseInt.cpp"

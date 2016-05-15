@@ -14,6 +14,7 @@ typedef struct {
 	Store *value;
 } Entry;
 
+static Store *parseStore(const char *input, StoreParseState *state);
 static Store *parseValue(const char *input, StoreParseState *state);
 static Store *parseString(const char *input, StoreParseState *state);
 static Store *parseInt(const char *input, StoreParseState *state);
@@ -38,11 +39,43 @@ static void freeParseReport(StoreParseReport *lastReport);
 static bool isHex(char c);
 static bool isSeparator(char c);
 
+StoreParser *StoreCreateParser()
+{
+	StoreParser *parser = StoreAllocateMemoryType(StoreParser);
+	parser->state.position.index = 0;
+	parser->state.position.line = 1;
+	parser->state.position.column = 1;
+	parser->state.lastReport = NULL;
+	return parser;
+}
+
+void StoreResetParser(StoreParser *parser)
+{
+	parser->state.position.index = 0;
+	parser->state.position.line = 1;
+	parser->state.position.column = 1;
+
+	freeParseReport(parser->state.lastReport);
+	parser->state.lastReport = NULL;
+}
+
+void StoreFreeParser(StoreParser *parser)
+{
+	freeParseReport(parser->state.lastReport);
+	free(parser);
+}
+
+Store *StoreParse(StoreParser *parser, const char *input)
+{
+	StoreResetParser(parser);
+	return parseStore(input, &parser->state);
+}
+
 /**
  * store	: value '\0'
  * 			| entries '\0'
  */
-Store *StoreParse(const char *input, StoreParseState *state)
+static Store *parseStore(const char *input, StoreParseState *state)
 {
 	StoreParseState storeState;
 	storeState.position = state->position;

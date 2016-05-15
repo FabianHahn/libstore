@@ -23,6 +23,13 @@ typedef struct StoreParseStateStruct {
 	StoreParseReport *lastReport;
 } StoreParseState;
 
-Store *StoreParse(const char *input, StoreParseState *state);
+typedef struct {
+	StoreParseState state;
+} StoreParser;
+
+StoreParser *StoreCreateParser();
+void StoreResetParser(StoreParser *parser);
+void StoreFreeParser(StoreParser *parser);
+Store *StoreParse(StoreParser *parser, const char *input);
 
 #endif
