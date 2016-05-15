@@ -6,8 +6,9 @@ TEST_F(Parser, parseMapEmpty)
 	ASSERT_TRUE(result != NULL) << "parseMap should not return NULL";
 	ASSERT_EQ(result->type, STORE_MAP) << "parseMap should return a store of type map";
 	ASSERT_EQ(StoreGetMapSize(result->content.mapValue), 0) << "parsed map should be empty";
-
 	StoreFree(result);
+
+	assertReportSuccess("map");
 }
 
 TEST_F(Parser, parseMapEmptyGap)
@@ -18,8 +19,9 @@ TEST_F(Parser, parseMapEmptyGap)
 	ASSERT_TRUE(result != NULL) << "parseMap should not return NULL";
 	ASSERT_EQ(result->type, STORE_MAP) << "parseMap should return a store of type map";
 	ASSERT_EQ(StoreGetMapSize(result->content.mapValue), 0) << "parsed map should be empty";
-
 	StoreFree(result);
+
+	assertReportSuccess("map");
 }
 
 TEST_F(Parser, parseMapSimple)
@@ -53,6 +55,8 @@ TEST_F(Parser, parseMapSimple)
 
 	StoreFreeMapIterator(iter);
 	StoreFree(result);
+
+	assertReportSuccess("map");
 }
 
 TEST_F(Parser, parseMapMultiple)
@@ -101,6 +105,8 @@ TEST_F(Parser, parseMapMultiple)
 	ASSERT_EQ(hits, 3) << "loop body should have hit three times";
 
 	StoreFree(result);
+
+	assertReportSuccess("map");
 }
 
 TEST_F(Parser, parseMapInvalid)
@@ -111,6 +117,8 @@ TEST_F(Parser, parseMapInvalid)
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("map");
 }
 
 TEST_F(Parser, parseMapInvalidEmpty)
@@ -121,6 +129,8 @@ TEST_F(Parser, parseMapInvalidEmpty)
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("map");
 }
 
 TEST_F(Parser, parseMapInvalidOffset)
@@ -131,6 +141,8 @@ TEST_F(Parser, parseMapInvalidOffset)
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("map");
 }
 
 TEST_F(Parser, parseMapInvalidUnclosed)
@@ -141,6 +153,8 @@ TEST_F(Parser, parseMapInvalidUnclosed)
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("map");
 }
 
 TEST_F(Parser, parseMapInvalidEntry)
@@ -151,6 +165,8 @@ TEST_F(Parser, parseMapInvalidEntry)
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("map");
 }
 
 TEST_F(Parser, parseMapInvalidEntryKey)
@@ -161,6 +177,8 @@ TEST_F(Parser, parseMapInvalidEntryKey)
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("map");
 }
 
 TEST_F(Parser, parseMapInvalidEntryValue)
@@ -171,4 +189,6 @@ TEST_F(Parser, parseMapInvalidEntryValue)
 	ASSERT_TRUE(result == NULL) << "parseMap should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("map");
 }

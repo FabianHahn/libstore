@@ -7,8 +7,9 @@ TEST_F(Parser, parseFloatSimple)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatNegative)
@@ -20,8 +21,9 @@ TEST_F(Parser, parseFloatNegative)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatExponential)
@@ -33,8 +35,9 @@ TEST_F(Parser, parseFloatExponential)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatPositiveExponential)
@@ -46,8 +49,9 @@ TEST_F(Parser, parseFloatPositiveExponential)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatNegativeExponential)
@@ -59,8 +63,9 @@ TEST_F(Parser, parseFloatNegativeExponential)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatCapitalExponential)
@@ -72,8 +77,9 @@ TEST_F(Parser, parseFloatCapitalExponential)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatCapitalPositiveExponential)
@@ -85,8 +91,9 @@ TEST_F(Parser, parseFloatCapitalPositiveExponential)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatCapitalNegativeExponential)
@@ -98,8 +105,9 @@ TEST_F(Parser, parseFloatCapitalNegativeExponential)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatInt)
@@ -111,8 +119,9 @@ TEST_F(Parser, parseFloatInt)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatIntDot)
@@ -126,8 +135,9 @@ TEST_F(Parser, parseFloatIntDot)
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
 	ASSERT_EQ(state.position.index, 4) << "state position index should have moved past dot character";
 	ASSERT_EQ(state.position.column, 5) << "state position column should have moved past dot character";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatZeroPoint)
@@ -139,8 +149,9 @@ TEST_F(Parser, parseFloatZeroPoint)
 	ASSERT_TRUE(result != NULL) << "parseFloat should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseFloat should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatInterrupted)
@@ -154,8 +165,9 @@ TEST_F(Parser, parseFloatInterrupted)
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
 	ASSERT_EQ(state.position.index, 3) << "state position index should have moved to interrupting character";
 	ASSERT_EQ(state.position.column, 4) << "state position column should have moved to interrupting character";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatInterruptedExponential)
@@ -169,8 +181,9 @@ TEST_F(Parser, parseFloatInterruptedExponential)
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
 	ASSERT_EQ(state.position.index, 3) << "state position index should have moved to interrupting character";
 	ASSERT_EQ(state.position.column, 4) << "state position column should have moved to interrupting character";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatGap)
@@ -184,18 +197,21 @@ TEST_F(Parser, parseFloatGap)
 	ASSERT_EQ(result->content.floatValue, solution) << "parseFloat should parse the correct float value";
 	ASSERT_EQ(state.position.index, 3) << "state position index should have moved to delimiter";
 	ASSERT_EQ(state.position.column, 4) << "state position column should have moved to delimiter";
-
 	StoreFree(result);
+
+	assertReportSuccess("float");
 }
 
 TEST_F(Parser, parseFloatInvalid)
 {
 	const char *input = "asdf";
 
-	Store *result = parseInt(input, &state);
+	Store *result = parseFloat(input, &state);
 	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("float");
 }
 
 TEST_F(Parser, parseFloatInvalidEmpty)
@@ -206,6 +222,8 @@ TEST_F(Parser, parseFloatInvalidEmpty)
 	ASSERT_TRUE(result == NULL) << "parseFloat should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("float");
 }
 
 TEST_F(Parser, parseFloatInvalidOffset)
@@ -217,6 +235,8 @@ TEST_F(Parser, parseFloatInvalidOffset)
 	ASSERT_TRUE(result == NULL) << "parseFloat should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("float");
 }
 
 TEST_F(Parser, parseFloatInvalidPureFractional)
@@ -228,6 +248,8 @@ TEST_F(Parser, parseFloatInvalidPureFractional)
 	ASSERT_EQ(state.position.index, 0) << "state position index should be unchanged";
 	ASSERT_EQ(state.position.column, 1) << "state position column should be unchanged";
 	ASSERT_EQ(state.position.line, 1) << "state position column should be unchanged";
+
+	assertReportFailure("float");
 }
 
 TEST_F(Parser, parseFloatInvalidPureExponential)
@@ -239,4 +261,6 @@ TEST_F(Parser, parseFloatInvalidPureExponential)
 	ASSERT_EQ(state.position.index, 0) << "state position index should be unchanged";
 	ASSERT_EQ(state.position.column, 1) << "state position column should be unchanged";
 	ASSERT_EQ(state.position.line, 1) << "state position column should be unchanged";
+
+	assertReportFailure("float");
 }

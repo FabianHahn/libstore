@@ -9,8 +9,9 @@ TEST_F(Parser, StoreParseValue)
 	ASSERT_EQ(result->content.intValue, solution) << "StoreParse should parse the correct int value";
 	ASSERT_EQ(state.position.index, 5) << "state position index should have moved to end of input";
 	ASSERT_EQ(state.position.column, 6) << "state position column should have moved to end of input";
-
 	StoreFree(result);
+
+	assertReportSuccess("store");
 }
 
 TEST_F(Parser, StoreParseEntries)
@@ -56,6 +57,8 @@ TEST_F(Parser, StoreParseEntries)
 	ASSERT_EQ(hits, 2) << "loop body should have hit two times";
 
 	StoreFree(result);
+
+	assertReportSuccess("store");
 }
 
 TEST_F(Parser, StoreParseInvalidElements)
@@ -65,4 +68,6 @@ TEST_F(Parser, StoreParseInvalidElements)
 	ASSERT_TRUE(result == NULL) << "StoreParse should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("store");
 }

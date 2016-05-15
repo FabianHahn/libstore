@@ -74,7 +74,7 @@ Store *StoreParse(const char *input, StoreParseState *state)
 		if(c == '\0') {
 			// make sure it's and actual EOF, not just a parseTerminal failure
 			if(input[storeState.position.index] == '\0') {
-				report(true, state, &storeState, "entries", "parsed entries store");
+				report(true, state, &storeState, "store", "parsed entries store");
 				state->position = storeState.position;
 				return valueStore;
 			}
@@ -345,7 +345,7 @@ static Store *parseFloat(const char *input, StoreParseState *state)
 		hasExponential = true;
 	}
 
-	report(false, state, &floatState, "float", "parsed %s float %s floating part and %s exponential part", isNegative ? "negative" : "positive", hasFloating ? "with" : "without", hasExponential ? "with" : "without");
+	report(true, state, &floatState, "float", "parsed %s float %s floating part and %s exponential part", isNegative ? "negative" : "positive", hasFloating ? "with" : "without", hasExponential ? "with" : "without");
 	state->position = floatState.position;
 	double floatValue = atof(StoreReadDynamicString(floatString));
 	StoreFreeDynamicString(floatString);

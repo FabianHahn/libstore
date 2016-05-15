@@ -6,8 +6,9 @@ TEST_F(Parser, parseListEmpty)
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
 	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parsed list should be empty";
-
 	StoreFree(result);
+
+	assertReportSuccess("list");
 }
 
 TEST_F(Parser, parseListEmptyBrackets)
@@ -18,8 +19,9 @@ TEST_F(Parser, parseListEmptyBrackets)
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
 	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parsed list should be empty";
-
 	StoreFree(result);
+
+	assertReportSuccess("list");
 }
 
 TEST_F(Parser, parseListEmptyGap)
@@ -30,8 +32,9 @@ TEST_F(Parser, parseListEmptyGap)
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
 	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parsed list should be empty";
-
 	StoreFree(result);
+
+	assertReportSuccess("list");
 }
 
 TEST_F(Parser, parseListMultipleElements)
@@ -64,6 +67,8 @@ TEST_F(Parser, parseListMultipleElements)
 	ASSERT_EQ(solutionPart4->content.intValue, solution4) << "fourth solution value should be correct";
 
 	StoreFree(result);
+
+	assertReportSuccess("list");
 }
 
 TEST_F(Parser, parseListNested)
@@ -80,6 +85,8 @@ TEST_F(Parser, parseListNested)
 	ASSERT_EQ(StoreGetListSize(nestedResult->content.listValue), 0) << "nested list should be empty";
 
 	StoreFree(result);
+
+	assertReportSuccess("list");
 }
 
 TEST_F(Parser, parseListInvalid)
@@ -90,6 +97,8 @@ TEST_F(Parser, parseListInvalid)
 	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("list");
 }
 
 TEST_F(Parser, parseListInvalidEmpty)
@@ -100,6 +109,8 @@ TEST_F(Parser, parseListInvalidEmpty)
 	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("list");
 }
 
 
@@ -111,8 +122,9 @@ TEST_F(Parser, parseListOffset)
 	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
-}
 
+	assertReportFailure("list");
+}
 
 TEST_F(Parser, parseListInvalidUnclosed)
 {
@@ -122,6 +134,8 @@ TEST_F(Parser, parseListInvalidUnclosed)
 	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("list");
 }
 
 TEST_F(Parser, parseListInvalidElement)
@@ -132,6 +146,8 @@ TEST_F(Parser, parseListInvalidElement)
 	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("list");
 }
 
 TEST_F(Parser, parseListInvalidMixed)
@@ -142,6 +158,8 @@ TEST_F(Parser, parseListInvalidMixed)
 	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("list");
 }
 
 TEST_F(Parser, parseListInvalidMixedInverse)
@@ -152,4 +170,6 @@ TEST_F(Parser, parseListInvalidMixedInverse)
 	ASSERT_TRUE(result == NULL) << "parseList should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("list");
 }

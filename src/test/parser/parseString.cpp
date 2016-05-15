@@ -7,8 +7,9 @@ TEST_F(Parser, parseStringSimple)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringSimpleUnicode)
@@ -20,8 +21,9 @@ TEST_F(Parser, parseStringSimpleUnicode)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringSimpleInterrupted)
@@ -35,8 +37,9 @@ TEST_F(Parser, parseStringSimpleInterrupted)
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
 	ASSERT_EQ(state.position.index, 3) << "state position index should have moved to delimiter";
 	ASSERT_EQ(state.position.column, 4) << "state position column should have moved to delimiter";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 
@@ -51,8 +54,9 @@ TEST_F(Parser, parseStringSimpleGap)
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
 	ASSERT_EQ(state.position.index, 5) << "state position index should have moved to delimiter";
 	ASSERT_EQ(state.position.column, 6) << "state position column should have moved to delimiter";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringLongButSimple)
@@ -64,8 +68,9 @@ TEST_F(Parser, parseStringLongButSimple)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringLongNotSimple)
@@ -77,8 +82,9 @@ TEST_F(Parser, parseStringLongNotSimple)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringLongEscaped)
@@ -90,8 +96,9 @@ TEST_F(Parser, parseStringLongEscaped)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringLongEncodedUnicode)
@@ -103,8 +110,9 @@ TEST_F(Parser, parseStringLongEncodedUnicode)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringLongWithNewlines)
@@ -119,8 +127,9 @@ TEST_F(Parser, parseStringLongWithNewlines)
 	ASSERT_EQ(state.position.index, 42) << "index should not have wrapped around over newlines";
 	ASSERT_EQ(state.position.column, 15) << "column should have wrapped around over newlines";
 	ASSERT_EQ(state.position.line, 3) << "line should have increased over newlines";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringLongEmpty)
@@ -132,8 +141,9 @@ TEST_F(Parser, parseStringLongEmpty)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-
 	StoreFree(result);
+
+	assertReportSuccess("string");
 }
 
 TEST_F(Parser, parseStringInvalid)
@@ -144,6 +154,8 @@ TEST_F(Parser, parseStringInvalid)
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("string");
 }
 
 TEST_F(Parser, parseStringInvalidEmpty)
@@ -154,6 +166,8 @@ TEST_F(Parser, parseStringInvalidEmpty)
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("string");
 }
 
 TEST_F(Parser, parseStringInvalidOffset)
@@ -164,6 +178,8 @@ TEST_F(Parser, parseStringInvalidOffset)
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("string");
 }
 
 TEST_F(Parser, parseStringInvalidUnclosed)
@@ -174,6 +190,8 @@ TEST_F(Parser, parseStringInvalidUnclosed)
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("string");
 }
 
 TEST_F(Parser, parseStringInvalidEscaped)
@@ -184,6 +202,8 @@ TEST_F(Parser, parseStringInvalidEscaped)
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("string");
 }
 
 TEST_F(Parser, parseStringInvalidEncoded)
@@ -194,4 +214,6 @@ TEST_F(Parser, parseStringInvalidEncoded)
 	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
 	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
 	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("string");
 }
