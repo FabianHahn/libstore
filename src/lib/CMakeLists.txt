@@ -4,6 +4,7 @@ set(LIBSTORE_LIB_SRC
 	encoding.c
 	memory.c
 	parser.c
+	report.c
 	store.c
 )
 
