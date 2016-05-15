@@ -57,3 +57,12 @@ TEST_F(Parser, StoreParseEntries)
 
 	StoreFree(result);
 }
+
+TEST_F(Parser, StoreParseInvalidElements)
+{
+	const char *input = " hello world ";
+	Store *result = StoreParse(input, &state);
+	ASSERT_TRUE(result == NULL) << "StoreParse should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+}
