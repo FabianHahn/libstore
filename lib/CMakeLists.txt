@@ -28,6 +28,7 @@ set(LIBSTORE_LIB_TEST_SRC
 if(LIBSTORE_BUILD_SHARED)
 	add_library(store SHARED ${LIBSTORE_LIB_SRC})
 	target_link_libraries(store fakeglib)
+	set_property(TARGET store PROPERTY C_STANDARD 99)
 	set_property(TARGET store PROPERTY CXX_STANDARD 11)
 	
 	generate_export_header(store
@@ -49,6 +50,7 @@ endif()
 if(LIBSTORE_BUILD_STATIC)
 	add_library(storestatic STATIC ${LIBSTORE_LIB_SRC})
 	target_link_libraries(storestatic fakeglibstatic)
+	set_property(TARGET storestatic PROPERTY C_STANDARD 99)
 	set_property(TARGET storestatic PROPERTY CXX_STANDARD 11)
 	target_compile_definitions(storestatic PUBLIC LIBSTORE_STATIC)
 	
