@@ -1,5 +1,11 @@
+#include <iostream>
+
 #include <glib.h>
 #include <gtest/gtest.h>
+
+extern "C" {
+	#include <store/report.h>
+}
 
 #include "encoding.c"
 #include "memory.c"
@@ -16,6 +22,11 @@ public:
 	}
 
 	virtual void TearDown() {
+		StoreParser parser{state};
+		char *report = storeGenerateParseReport(&parser);
+		std::cout << report << std::endl;
+		free(report);
+
 		g_queue_free_full(state.reports, freeParseReportPointer);
 	}
 
