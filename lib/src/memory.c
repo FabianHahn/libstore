@@ -7,7 +7,7 @@ void *storeAllocateMemory(int bytes)
 	return malloc(bytes);
 }
 
-void *storeFreeMemory(void *memory)
+void storeFreeMemory(void *memory)
 {
 	free(memory);
 }

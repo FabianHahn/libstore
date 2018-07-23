@@ -16,7 +16,7 @@ LIBSTORE_NO_EXPORT void *storeAllocateMemory(int bytes);
  *
  * @param memory	a pointer to the memory to be freed
  */
-LIBSTORE_NO_EXPORT void *storeFreeMemory(void *memory);
+LIBSTORE_NO_EXPORT void storeFreeMemory(void *memory);
 
 /**
  * Allocate a block of memory on the heap for a specified type.
