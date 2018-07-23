@@ -109,7 +109,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
 			if(input[storeState.position.index] == '\0') {
 				report(true, state, &storeState, "store", "parsed entries store");
 				state->position = storeState.position;
-				return valueStore;
+				return entriesStore;
 			}
 		}
 
@@ -117,7 +117,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
 		entriesState.position = storeState.position;
 		entriesState.lastReport = NULL;
 		report(false, &storeState, &entriesState, "entries", "expected termination by end of input, but got '%c'", c);
-		storeFree(valueStore);
+		storeFree(entriesStore);
 	}
 
 	report(false, state, &storeState, "store", "expected value or entries");
