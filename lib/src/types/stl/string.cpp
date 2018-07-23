@@ -4,7 +4,7 @@
 #include <string>
 
 extern "C" {
-	#include <types.h>
+	#include <store/types.h>
 }
 
 StoreDynamicString StoreCreateDynamicString()

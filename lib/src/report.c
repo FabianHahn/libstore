@@ -1,7 +1,8 @@
 #include <stddef.h> // NULL
 #include <string.h> // strdup
-#include "report.h"
-#include "types.h"
+
+#include "store/report.h"
+#include "store/types.h"
 
 static void appendParseReport(StoreParseReport *report, StoreDynamicString reportString, int level);
 static void appendNTimes(StoreDynamicString string, int n, const char *what);

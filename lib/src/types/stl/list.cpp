@@ -2,8 +2,8 @@
 #include <vector>
 
 extern "C" {
-	#include <store.h>
-	#include <types.h>
+	#include <store/store.h>
+	#include <store/types.h>
 }
 
 typedef std::vector<Store *> StlList;

@@ -4,7 +4,7 @@
 #include <stdbool.h> // bool
 #include <stdarg.h> // va_list
 
-#include "api.h"
+#include <store/api.h>
 
 struct Store; // forward declaration
 

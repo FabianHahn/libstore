@@ -1,8 +1,8 @@
 #include <stdlib.h> // free
 #include <string.h>
 
-#include "memory.h"
-#include "store.h"
+#include "store/memory.h"
+#include "store/store.h"
 
 Store *StoreCreateStringValue(const char *stringValue)
 {

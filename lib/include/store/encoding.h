@@ -3,8 +3,8 @@
 
 #include <stdint.h> // uint32_t
 
-#include "api.h"
-#include "types.h"
+#include <store/api.h>
+#include <store/types.h>
 
 /**
  * Converts a Unicode codepoint (UCS character) into an UTF-8 encoded string

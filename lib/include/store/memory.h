@@ -1,7 +1,7 @@
-#ifndef LIBSTORE_MEMORY
-#define LIBSTORE_MEMORY
+#ifndef LIBSTORE_MEMORY_H
+#define LIBSTORE_MEMORY_H
 
-#include "api.h"
+#include <store/api.h>
 
 /**
  * Allocate a block of memory on the heap.

@@ -2,8 +2,8 @@
 #include <string>
 
 extern "C" {
-	#include <store.h>
-	#include <types.h>
+	#include <store/store.h>
+	#include <store/types.h>
 }
 
 typedef std::map<std::string, Store *> StlMap;

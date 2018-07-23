@@ -5,9 +5,9 @@
 #include <stdlib.h> // atoi atof
 #include <string.h> // strdup
 
-#include "encoding.h"
-#include "memory.h"
-#include "parser.h"
+#include "store/encoding.h"
+#include "store/memory.h"
+#include "store/parser.h"
 
 typedef struct {
 	const char *key;

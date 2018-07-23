@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
-#include <encoding.c>
-#include <memory.c>
-#include <parser.c>
-#include <store.c>
-#include <types/stl/list.cpp>
-#include <types/stl/map.cpp>
-#include <types/stl/string.cpp>
+#include "encoding.c"
+#include "memory.c"
+#include "parser.c"
+#include "store.c"
+#include "types/stl/list.cpp"
+#include "types/stl/map.cpp"
+#include "types/stl/string.cpp"
 
 class Parser: public ::testing::Test {
 public:
@@ -39,10 +39,10 @@ protected:
 	StoreParseState state;
 };
 
-#include "parser/parseStore.cpp"
-#include "parser/parseValue.cpp"
-#include "parser/parseString.cpp"
-#include "parser/parseInt.cpp"
-#include "parser/parseFloat.cpp"
-#include "parser/parseList.cpp"
-#include "parser/parseMap.cpp"
+#include "parser_test_parseStore.h"
+#include "parser_test_parseValue.h"
+#include "parser_test_parseString.h"
+#include "parser_test_parseInt.h"
+#include "parser_test_parseFloat.h"
+#include "parser_test_parseList.h"
+#include "parser_test_parseMap.h"

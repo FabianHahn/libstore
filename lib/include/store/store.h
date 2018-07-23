@@ -1,8 +1,8 @@
 #ifndef LIBSTORE_STORE_H
 #define LIBSTORE_STORE_H
 
-#include "api.h"
-#include "types.h"
+#include <store/api.h>
+#include <store/types.h>
 
 /**
  * Enumeration of the store value types

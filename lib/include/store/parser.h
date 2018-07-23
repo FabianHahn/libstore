@@ -1,7 +1,7 @@
 #ifndef LIBSTORE_PARSER_H
 #define LIBSTORE_PARSER_H
 
-#include "store.h"
+#include <store/store.h>
 
 typedef struct {
 	int index;

@@ -1,7 +1,7 @@
 #include <stddef.h> // NULL
 
-#include "encoding.h"
-#include "types.h"
+#include "store/encoding.h"
+#include "store/types.h"
 
 StoreDynamicString StoreConvertUnicodeToUtf8(uint32_t codepoint)
 {

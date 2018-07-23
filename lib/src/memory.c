@@ -1,5 +1,6 @@
 #include <stdlib.h>
-#include "memory.h"
+
+#include "store/memory.h"
 
 void *StoreAllocateMemory(int bytes)
 {
