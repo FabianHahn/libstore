@@ -14,13 +14,14 @@ typedef struct StoreParseReportStruct {
 	StoreParseStatePosition position;
 	const char *type;
 	char *message;
-	struct StoreParseReportStruct *lastSubReport;
-	struct StoreParseReportStruct *previousReport;
+	/** list of (StoreParseReport *) */
+	GQueue *subreports;
 } StoreParseReport;
 
 typedef struct StoreParseStateStruct {
 	StoreParseStatePosition position;
-	StoreParseReport *lastReport;
+	/** list of (StoreParseReport *) */
+	GQueue *reports;
 } StoreParseState;
 
 typedef struct {

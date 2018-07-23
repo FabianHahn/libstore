@@ -12,26 +12,28 @@ public:
 		state.position.index = 0;
 		state.position.line = 1;
 		state.position.column = 1;
-		state.lastReport = NULL;
+		state.reports = g_queue_new();
 	}
 
 	virtual void TearDown() {
-		freeParseReport(state.lastReport);
+		g_queue_free_full(state.reports, freeParseReportPointer);
 	}
 
 protected:
 	virtual void assertReportSuccess(const char *type) {
-		ASSERT_TRUE(state.lastReport != NULL)<< "parse state's last report should not be NULL";
-		ASSERT_TRUE(state.lastReport->previousReport == NULL) << "parse state should only have one report";
-		ASSERT_TRUE(state.lastReport->success) << "parse state's report should be successful";
-		ASSERT_STREQ(state.lastReport->type, type) << "parse state's report should have the correct type";
+		ASSERT_EQ(g_queue_get_length(state.reports), 1) << "parse state should contain a single report";
+
+		StoreParseReport *report = (StoreParseReport *) state.reports->head->data;
+		ASSERT_TRUE(report->success) << "parse state's report should be successful";
+		ASSERT_STREQ(report->type, type) << "parse state's report should have the correct type";
 	}
 
 	virtual void assertReportFailure(const char *type) {
-		ASSERT_TRUE(state.lastReport != NULL)<< "parse state's last report should not be NULL";
-		ASSERT_TRUE(state.lastReport->previousReport == NULL) << "parse state should only have one report";
-		ASSERT_FALSE(state.lastReport->success) << "parse state's report should be a failure";
-		ASSERT_STREQ(state.lastReport->type, type) << "parse state's report should have the correct type";
+		ASSERT_EQ(g_queue_get_length(state.reports), 1) << "parse state should contain a single report";
+
+		StoreParseReport *report = (StoreParseReport *) state.reports->head->data;
+		ASSERT_FALSE(report->success) << "parse state's report should be a failure";
+		ASSERT_STREQ(report->type, type) << "parse state's report should have the correct type";
 	}
 
 	StoreParseState state;

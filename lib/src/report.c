@@ -6,26 +6,33 @@
 
 #include "store/report.h"
 
-static void appendParseReport(StoreParseReport *report, GString *reportString, int level);
+static void appendParseReports(GString *reportString, GQueue *reports, int level);
+static void appendParseReport(GString *reportString, StoreParseReport *report, int level);
 static void appendNTimes(GString *string, int n, const char *what);
 
 char *storeGenerateParseReport(StoreParser *parser)
 {
 	GString *reportString = g_string_new("");
-	appendParseReport(parser->state.lastReport, reportString, 0);
+	appendParseReports(reportString, parser->state.reports, 0);
 
 	char *result = reportString->str;
 	g_string_free(reportString, false);
 	return result;
 }
 
-static void appendParseReport(StoreParseReport *report, GString *reportString, int level)
+static void appendParseReports(GString *reportString, GQueue *reports, int level)
+{
+	for(GList *iter = reports->head; iter != NULL; iter = iter->next) {
+		StoreParseReport *report = (StoreParseReport *) iter->data;
+		appendParseReport(reportString, report, level);
+	}
+}
+
+static void appendParseReport(GString *reportString, StoreParseReport *report, int level)
 {
 	if(report == NULL) {
 		return;
 	}
-
-	appendParseReport(report->previousReport, reportString, level);
 
 	appendNTimes(reportString, level, "\t");
 	if(report->success) {
@@ -34,7 +41,7 @@ static void appendParseReport(StoreParseReport *report, GString *reportString, i
 		g_string_append_printf(reportString, "failed to parse %s at line %d, column %d: %s\n", report->type, report->position.line, report->position.column, report->message);
 	}
 
-	appendParseReport(report->lastSubReport, reportString, level + 1);
+	appendParseReports(reportString, report->subreports, level + 1);
 }
 
 static void appendNTimes(GString *string, int n, const char *what)
