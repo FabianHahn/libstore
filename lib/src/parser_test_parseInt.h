@@ -1,3 +1,8 @@
+#include <glib.h>
+#include <gtest/gtest.h>
+
+#include "store/store.h"
+
 TEST_F(Parser, parseIntSimple)
 {
 	const char *input = "1234567890";
@@ -7,7 +12,7 @@ TEST_F(Parser, parseIntSimple)
 	ASSERT_TRUE(result != NULL) << "parseInt should not return NULL";
 	ASSERT_EQ(result->type, STORE_INT) << "parseInt should return a store of type int";
 	ASSERT_EQ(result->content.intValue, solution) << "parseInt should parse the correct integer value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("int");
 }
@@ -21,7 +26,7 @@ TEST_F(Parser, parseIntNegative)
 	ASSERT_TRUE(result != NULL) << "parseInt should not return NULL";
 	ASSERT_EQ(result->type, STORE_INT) << "parseInt should return a store of type int";
 	ASSERT_EQ(result->content.intValue, solution) << "parseInt should parse the correct integer value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("int");
 }
@@ -37,7 +42,7 @@ TEST_F(Parser, parseIntInterrupted)
 	ASSERT_EQ(result->content.intValue, solution) << "parseInt should parse the correct integer value";
 	ASSERT_EQ(state.position.index, 1) << "state position index should have moved to interrupting character";
 	ASSERT_EQ(state.position.column, 2) << "state position column should have moved to interrupting character";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("int");
 }
@@ -53,7 +58,7 @@ TEST_F(Parser, parseIntGap)
 	ASSERT_EQ(result->content.intValue, solution) << "parseInt should parse the correct integer value";
 	ASSERT_EQ(state.position.index, 1) << "state position index should have moved to delimiter";
 	ASSERT_EQ(state.position.column, 2) << "state position column should have moved to delimiter";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("int");
 }

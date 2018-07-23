@@ -1,13 +1,13 @@
-#include <stdlib.h>
+#include <stdlib.h> // malloc free
 
 #include "store/memory.h"
 
-void *StoreAllocateMemory(int bytes)
+void *storeAllocateMemory(int bytes)
 {
 	return malloc(bytes);
 }
 
-void *StoreFreeMemory(void *memory)
+void *storeFreeMemory(void *memory)
 {
 	free(memory);
 }

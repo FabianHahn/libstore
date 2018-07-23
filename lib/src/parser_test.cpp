@@ -1,12 +1,10 @@
+#include <glib.h>
 #include <gtest/gtest.h>
 
 #include "encoding.c"
 #include "memory.c"
 #include "parser.c"
 #include "store.c"
-#include "types/stl/list.cpp"
-#include "types/stl/map.cpp"
-#include "types/stl/string.cpp"
 
 class Parser: public ::testing::Test {
 public:

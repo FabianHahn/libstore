@@ -4,52 +4,54 @@
 #include "store/memory.h"
 #include "store/store.h"
 
-Store *StoreCreateStringValue(const char *stringValue)
+static void freeStore(void *storePointer);
+
+Store *storeCreateStringValue(const char *stringValue)
 {
-	Store *store = StoreAllocateMemoryType(Store);
+	Store *store = storeAllocateMemoryType(Store);
 	store->type = STORE_STRING;
 	store->content.stringValue = strdup(stringValue);
 
 	return store;
 }
 
-Store *StoreCreateIntValue(int intValue)
+Store *storeCreateIntValue(int intValue)
 {
-	Store *store = StoreAllocateMemoryType(Store);
+	Store *store = storeAllocateMemoryType(Store);
 	store->type = STORE_INT;
 	store->content.intValue = intValue;
 
 	return store;
 }
 
-Store *StoreCreateFloatValue(double floatValue)
+Store *storeCreateFloatValue(double floatValue)
 {
-	Store *store = StoreAllocateMemoryType(Store);
+	Store *store = storeAllocateMemoryType(Store);
 	store->type = STORE_FLOAT;
 	store->content.floatValue = floatValue;
 
 	return store;
 }
 
-Store *StoreCreateListValue()
+Store *storeCreateListValue()
 {
-	Store *store = StoreAllocateMemoryType(Store);
+	Store *store = storeAllocateMemoryType(Store);
 	store->type = STORE_LIST;
-	store->content.listValue = StoreCreateList();
+	store->content.listValue = g_queue_new();
 
 	return store;
 }
 
-Store *StoreCreateMapValue()
+Store *storeCreateMapValue()
 {
-	Store *store = StoreAllocateMemoryType(Store);
+	Store *store = storeAllocateMemoryType(Store);
 	store->type = STORE_MAP;
-	store->content.mapValue = StoreCreateMap();
+	store->content.mapValue = g_hash_table_new_full(g_str_hash, g_str_equal, free, freeStore);
 
 	return store;
 }
 
-const char *StoreGetTypeName(Store *store)
+const char *storeGetTypeName(Store *store)
 {
 	switch(store->type) {
 		case STORE_STRING:
@@ -67,22 +69,28 @@ const char *StoreGetTypeName(Store *store)
 	}
 }
 
-void StoreFree(Store *store)
+void storeFree(Store *store)
 {
 	switch(store->type) {
 		case STORE_STRING:
 			free(store->content.stringValue);
 		break;
 		case STORE_LIST:
-			StoreFreeList(store->content.listValue);
+			g_queue_free_full(store->content.listValue, freeStore);
 		break;
 		case STORE_MAP:
-			StoreFreeMap(store->content.mapValue);
+			g_hash_table_destroy(store->content.mapValue);
 		break;
 		default:
 			// No need to free ints or doubles
 		break;
 	}
 
-	StoreFreeMemory(store);
+	storeFreeMemory(store);
+}
+
+static void freeStore(void *storePointer)
+{
+	Store *store = (Store *) storePointer;
+	storeFree(store);
 }

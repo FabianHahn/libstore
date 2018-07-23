@@ -10,7 +10,7 @@
 #include "store/parser.h"
 
 typedef struct {
-	const char *key;
+	char *key;
 	Store *value;
 } Entry;
 
@@ -24,12 +24,12 @@ static Store *parseElements(const char *input, StoreParseState *state);
 static Store *parseMap(const char *input, StoreParseState *state);
 static Store *parseEntries(const char *input, StoreParseState *state);
 static Entry *parseEntry(const char *input, StoreParseState *state);
-static StoreDynamicString parseDigits(const char *input, StoreParseState *state);
-static StoreDynamicString parseFloating(const char *input, StoreParseState *state);
-static StoreDynamicString parseExponential(const char *input, StoreParseState *state);
-static StoreDynamicString parseShortString(const char *input, StoreParseState *state);
-static StoreDynamicString parseLongString(const char *input, StoreParseState *state);
-static StoreDynamicString parseLongStringChunk(const char *input, StoreParseState *state);
+static GString *parseDigits(const char *input, StoreParseState *state);
+static GString *parseFloating(const char *input, StoreParseState *state);
+static GString *parseExponential(const char *input, StoreParseState *state);
+static GString *parseShortString(const char *input, StoreParseState *state);
+static GString *parseLongString(const char *input, StoreParseState *state);
+static GString *parseLongStringChunk(const char *input, StoreParseState *state);
 static char parseTerminal(const char *input, StoreParseState *state);
 static char parseHex(const char *input, StoreParseState *state);
 static char parseDigit(const char *input, StoreParseState *state);
@@ -39,9 +39,9 @@ static void freeParseReport(StoreParseReport *lastReport);
 static bool isHex(char c);
 static bool isSeparator(char c);
 
-StoreParser *StoreCreateParser()
+StoreParser *storeCreateParser()
 {
-	StoreParser *parser = StoreAllocateMemoryType(StoreParser);
+	StoreParser *parser = storeAllocateMemoryType(StoreParser);
 	parser->state.position.index = 0;
 	parser->state.position.line = 1;
 	parser->state.position.column = 1;
@@ -49,7 +49,7 @@ StoreParser *StoreCreateParser()
 	return parser;
 }
 
-void StoreResetParser(StoreParser *parser)
+void storeResetParser(StoreParser *parser)
 {
 	parser->state.position.index = 0;
 	parser->state.position.line = 1;
@@ -59,15 +59,15 @@ void StoreResetParser(StoreParser *parser)
 	parser->state.lastReport = NULL;
 }
 
-void StoreFreeParser(StoreParser *parser)
+void storeFreeParser(StoreParser *parser)
 {
 	freeParseReport(parser->state.lastReport);
 	free(parser);
 }
 
-Store *StoreParse(StoreParser *parser, const char *input)
+Store *storeParse(StoreParser *parser, const char *input)
 {
-	StoreResetParser(parser);
+	storeResetParser(parser);
 	return parseStore(input, &parser->state);
 }
 
@@ -87,7 +87,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
 		if(c == '\0') {
 			// make sure it's and actual EOF, not just a parseTerminal failure
 			if(input[storeState.position.index] == '\0') {
-				report(true, state, &storeState, "store", "parsed value store of type %s", StoreGetTypeName(valueStore));
+				report(true, state, &storeState, "store", "parsed value store of type %s", storeGetTypeName(valueStore));
 				state->position = storeState.position;
 				return valueStore;
 			}
@@ -97,7 +97,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
 		valueState.position = storeState.position;
 		valueState.lastReport = NULL;
 		report(false, &storeState, &valueState, "value", "expected termination by end of input, but got '%c'", c);
-		StoreFree(valueStore);
+		storeFree(valueStore);
 	}
 
 	storeState.position = state->position;
@@ -117,7 +117,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
 		entriesState.position = storeState.position;
 		entriesState.lastReport = NULL;
 		report(false, &storeState, &entriesState, "entries", "expected termination by end of input, but got '%c'", c);
-		StoreFree(valueStore);
+		storeFree(valueStore);
 	}
 
 	report(false, state, &storeState, "store", "expected value or entries");
@@ -157,7 +157,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			intState.position = valueState.position;
 			intState.lastReport = NULL;
 			report(false, &valueState, &intState, "int", "expected termination by separator but got '%c'", c);
-			StoreFree(intStore);
+			storeFree(intStore);
 		}
 	}
 
@@ -174,7 +174,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			floatState.position = valueState.position;
 			floatState.lastReport = NULL;
 			report(false, &valueState, &floatState, "float", "expected termination by separator but got '%c'", c);
-			StoreFree(floatStore);
+			storeFree(floatStore);
 		}
 	}
 
@@ -191,7 +191,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			stringState.position = valueState.position;
 			stringState.lastReport = NULL;
 			report(false, &valueState, &stringState, "string", "expected termination by separator but got '%c'", c);
-			StoreFree(stringStore);
+			storeFree(stringStore);
 		}
 	}
 
@@ -208,7 +208,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			listState.position = valueState.position;
 			listState.lastReport = NULL;
 			report(false, &valueState, &listState, "list", "expected termination by separator but got '%c'", c);
-			StoreFree(listStore);
+			storeFree(listStore);
 		}
 	}
 
@@ -225,7 +225,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			mapState.position = valueState.position;
 			mapState.lastReport = NULL;
 			report(false, &valueState, &mapState, "map", "expected termination by separator but got '%c'", c);
-			StoreFree(mapStore);
+			storeFree(mapStore);
 		}
 	}
 
@@ -254,7 +254,7 @@ static Store *parseString(const char *input, StoreParseState *state)
 		stringState.position.index++;
 		stringState.position.column++;
 
-		StoreDynamicString longString = parseLongString(input, &stringState);
+		GString *longString = parseLongString(input, &stringState);
 		if(longString == NULL) {
 			report(false, state, &stringState, "string", "expected long string");
 			return NULL;
@@ -263,7 +263,7 @@ static Store *parseString(const char *input, StoreParseState *state)
 		c = input[stringState.position.index];
 		if(c != '"') {
 			report(false, state, &stringState, "string", "expected '\"' delimiter after long string, but got '%c'", c);
-			StoreFreeDynamicString(longString);
+			g_string_free(longString, true);
 			return NULL;
 		}
 
@@ -271,17 +271,17 @@ static Store *parseString(const char *input, StoreParseState *state)
 		stringState.position.index++;
 		stringState.position.column++;
 
-		stringStore = StoreCreateStringValue(StoreReadDynamicString(longString));
-		StoreFreeDynamicString(longString);
+		stringStore = storeCreateStringValue(longString->str);
+		g_string_free(longString, true);
 	} else {
-		StoreDynamicString shortString = parseShortString(input, &stringState);
+		GString *shortString = parseShortString(input, &stringState);
 		if(shortString == NULL) {
 			report(false, state, &stringState, "string", "expected short string");
 			return NULL;
 		}
 
-		stringStore = StoreCreateStringValue(StoreReadDynamicString(shortString));
-		StoreFreeDynamicString(shortString);
+		stringStore = storeCreateStringValue(shortString->str);
+		g_string_free(shortString, true);
 	}
 
 	report(true, state, &stringState, "string", "parsed %s string", isShort ? "short" : "long");
@@ -298,12 +298,12 @@ static Store *parseInt(const char *input, StoreParseState *state)
 	intState.position = state->position;
 	intState.lastReport = NULL;
 
-	StoreDynamicString intString = StoreCreateDynamicString();
+	GString *intString = g_string_new("");
 
 	bool isNegative = false;
 	char c = input[intState.position.index];
 	if(c == '-') {
-		StoreAppendDynamicString(intString, "-");
+		g_string_append_printf(intString, "-");
 
 		// eat that character
 		intState.position.index++;
@@ -312,21 +312,21 @@ static Store *parseInt(const char *input, StoreParseState *state)
 		isNegative = true;
 	}
 
-	StoreDynamicString digitsString = parseDigits(input, &intState);
+	GString *digitsString = parseDigits(input, &intState);
 	if(digitsString == NULL) {
 		report(false, state, &intState, "int", "expected digits");
-		StoreFreeDynamicString(intString);
+		g_string_free(intString, true);
 		return NULL;
 	}
 
-	StoreAppendDynamicString(intString, "%s", StoreReadDynamicString(digitsString));
-	StoreFreeDynamicString(digitsString);
+	g_string_append_printf(intString, "%s", digitsString->str);
+	g_string_free(digitsString, true);
 
 	report(true, state, &intState, "int", "parsed %s int", isNegative ? "negative" : "positive");
 	state->position = intState.position;
-	int intValue = atoi(StoreReadDynamicString(intString));
-	StoreFreeDynamicString(intString);
-	return StoreCreateIntValue(intValue);
+	int intValue = atoi(intString->str);
+	g_string_free(intString, true);
+	return storeCreateIntValue(intValue);
 }
 
 /**
@@ -338,12 +338,12 @@ static Store *parseFloat(const char *input, StoreParseState *state)
 	floatState.position = state->position;
 	floatState.lastReport = NULL;
 
-	StoreDynamicString floatString = StoreCreateDynamicString();
+	GString *floatString = g_string_new("");
 
 	bool isNegative = false;
 	char c = input[floatState.position.index];
 	if(c == '-') {
-		StoreAppendDynamicString(floatString, "-");
+		g_string_append_printf(floatString, "-");
 
 		// eat that character
 		floatState.position.index++;
@@ -352,37 +352,37 @@ static Store *parseFloat(const char *input, StoreParseState *state)
 		isNegative = true;
 	}
 
-	StoreDynamicString digitsString = parseDigits(input, &floatState);
+	GString *digitsString = parseDigits(input, &floatState);
 	if(digitsString == NULL) {
 		report(false, state, &floatState, "float", "expected digits");
-		StoreFreeDynamicString(floatString);
+		g_string_free(floatString, true);
 		return NULL;
 	}
 
-	StoreAppendDynamicString(floatString, "%s", StoreReadDynamicString(digitsString));
-	StoreFreeDynamicString(digitsString);
+	g_string_append_printf(floatString, "%s", digitsString->str);
+	g_string_free(digitsString, true);
 
 	bool hasFloating = false;
-	StoreDynamicString floatingString = parseFloating(input, &floatState);
+	GString *floatingString = parseFloating(input, &floatState);
 	if(floatingString != NULL) {
-		StoreAppendDynamicString(floatString, "%s", StoreReadDynamicString(floatingString));
-		StoreFreeDynamicString(floatingString);
+		g_string_append_printf(floatString, "%s", floatingString->str);
+		g_string_free(floatingString, true);
 		hasFloating = true;
 	}
 
 	bool hasExponential = false;
-	StoreDynamicString exponentialString = parseExponential(input, &floatState);
+	GString *exponentialString = parseExponential(input, &floatState);
 	if(exponentialString != NULL) {
-		StoreAppendDynamicString(floatString, "%s", StoreReadDynamicString(exponentialString));
-		StoreFreeDynamicString(exponentialString);
+		g_string_append_printf(floatString, "%s", exponentialString->str);
+		g_string_free(exponentialString, true);
 		hasExponential = true;
 	}
 
 	report(true, state, &floatState, "float", "parsed %s float %s floating part and %s exponential part", isNegative ? "negative" : "positive", hasFloating ? "with" : "without", hasExponential ? "with" : "without");
 	state->position = floatState.position;
-	double floatValue = atof(StoreReadDynamicString(floatString));
-	StoreFreeDynamicString(floatString);
-	return StoreCreateFloatValue(floatValue);
+	double floatValue = atof(floatString->str);
+	g_string_free(floatString, true);
+	return storeCreateFloatValue(floatValue);
 }
 
 /**
@@ -413,11 +413,11 @@ static Store *parseList(const char *input, StoreParseState *state)
 		c = parseTerminal(input, &listState);
 		if(c == '\0') {
 			report(false, state, &listState, "list", "expected terminal");
-			StoreFree(listStore);
+			storeFree(listStore);
 			return NULL;
 		} else if(c != ')') {
 			report(false, state, &listState, "list", "ending character must be ')', but got '%c'", c);
-			StoreFree(listStore);
+			storeFree(listStore);
 			return NULL;
 		}
 
@@ -438,11 +438,11 @@ static Store *parseList(const char *input, StoreParseState *state)
 		c = parseTerminal(input, &listState);
 		if(c == '\0') {
 			report(false, state, &listState, "list", "expected terminal");
-			StoreFree(listStore);
+			storeFree(listStore);
 			return NULL;
 		} else if(c != ']') {
 			report(false, state, &listState, "list", "ending character must be ']', but got '%c'", c);
-			StoreFree(listStore);
+			storeFree(listStore);
 			return NULL;
 		}
 
@@ -471,14 +471,14 @@ static Store *parseElements(const char *input, StoreParseState *state)
 	elementsState.lastReport = NULL;
 
 	int numElements = 0;
-	Store *listStore = StoreCreateListValue();
+	Store *listStore = storeCreateListValue();
 	while(true) {
 		Store *valueStore = parseValue(input, &elementsState);
 		if(valueStore == NULL) {
 			break;
 		}
 
-		StoreAppendList(listStore->content.listValue, valueStore);
+		g_queue_push_tail(listStore->content.listValue, valueStore);
 		numElements++;
 	}
 
@@ -515,11 +515,11 @@ static Store *parseMap(const char *input, StoreParseState *state)
 	c = parseTerminal(input, &mapState);
 	if(c == '\0') {
 		report(false, state, &mapState, "map", "expected terminal");
-		StoreFree(mapStore);
+		storeFree(mapStore);
 		return NULL;
 	} else if(c != '}') {
 		report(false, state, &mapState, "map", "ending character must be '}', but got '%c'", c);
-		StoreFree(mapStore);
+		storeFree(mapStore);
 		return NULL;
 	}
 
@@ -542,15 +542,15 @@ static Store *parseEntries(const char *input, StoreParseState *state)
 	entriesState.lastReport = NULL;
 
 	int numEntries = 0;
-	Store *entriesStore = StoreCreateMapValue();
+	Store *entriesStore = storeCreateMapValue();
 	while(true) {
 		Entry *entry = parseEntry(input, &entriesState);
 		if(entry == NULL) {
 			break;
 		}
 
-		StoreInsertMap(entriesStore->content.mapValue, entry->key, entry->value);
-		StoreFreeMemory(entry);
+		g_hash_table_insert(entriesStore->content.mapValue, entry->key, entry->value);
+		storeFreeMemory(entry);
 		numEntries++;
 	}
 
@@ -584,11 +584,11 @@ static Entry *parseEntry(const char *input, StoreParseState *state)
 	c = parseTerminal(input, &entryState);
 	if(c == '\0') {
 		report(false, state, &entryState, "entry", "expected terminal");
-		StoreFree(stringStore);
+		storeFree(stringStore);
 		return NULL;
 	} else if(c != ':' && c != '=') {
 		report(false, state, &entryState, "entry", "entry separating character must be ':' or '=', but got '%c'", c);
-		StoreFree(stringStore);
+		storeFree(stringStore);
 		return NULL;
 	}
 
@@ -599,16 +599,16 @@ static Entry *parseEntry(const char *input, StoreParseState *state)
 	Store *valueStore = parseValue(input, &entryState);
 	if(valueStore == NULL) {
 		report(false, state, &entryState, "entry", "expected value");
-		StoreFree(stringStore);
+		storeFree(stringStore);
 		return NULL;
 	}
 
-	Entry *entry = StoreAllocateMemoryType(Entry);
+	Entry *entry = storeAllocateMemoryType(Entry);
 	entry->key = strdup(stringStore->content.stringValue);
 	entry->value = valueStore;
-	StoreFree(stringStore);
+	storeFree(stringStore);
 
-	report(true, state, &entryState, "entry", "parsed entry with %s value", StoreGetTypeName(valueStore));
+	report(true, state, &entryState, "entry", "parsed entry with %s value", storeGetTypeName(valueStore));
 	state->position = entryState.position;
 	return entry;
 }
@@ -616,13 +616,13 @@ static Entry *parseEntry(const char *input, StoreParseState *state)
 /**
  * digits	: digit+
  */
-static StoreDynamicString parseDigits(const char *input, StoreParseState *state)
+static GString *parseDigits(const char *input, StoreParseState *state)
 {
 	StoreParseState digitsState;
 	digitsState.position = state->position;
 	digitsState.lastReport = NULL;
 
-	StoreDynamicString digitsString = StoreCreateDynamicString();
+	GString *digitsString = g_string_new("");
 
 	int numDigits = 0;
 	while(true) {
@@ -634,14 +634,14 @@ static StoreDynamicString parseDigits(const char *input, StoreParseState *state)
 
 		digitsState.position.index++;
 		digitsState.position.column++;
-		StoreAppendDynamicString(digitsString, "%c", c);
+		g_string_append_printf(digitsString, "%c", c);
 
 		numDigits++;
 	}
 
 	if(numDigits == 0) {
 		report(false, state, &digitsState, "digits", "no digits parsed");
-		StoreFreeDynamicString(digitsString);
+		g_string_free(digitsString, true);
 		return NULL;
 	}
 
@@ -653,21 +653,21 @@ static StoreDynamicString parseDigits(const char *input, StoreParseState *state)
 /**
  * floating	: '.' digits?
  */
-static StoreDynamicString parseFloating(const char *input, StoreParseState *state)
+static GString *parseFloating(const char *input, StoreParseState *state)
 {
 	StoreParseState floatingState;
 	floatingState.position = state->position;
 	floatingState.lastReport = NULL;
 
-	StoreDynamicString floatingString = StoreCreateDynamicString();
+	GString *floatingString = g_string_new("");
 
 	char c = input[floatingState.position.index];
 	if(c == '\0') {
 		report(false, state, &floatingState, "floating", "unexpected end of input");
-		StoreFreeDynamicString(floatingString);
+		g_string_free(floatingString, true);
 		return NULL;
 	} else if(c == '.') {
-		StoreAppendDynamicString(floatingString, ".");
+		g_string_append_printf(floatingString, ".");
 
 		// eat that character
 		floatingState.position.index++;
@@ -675,10 +675,10 @@ static StoreDynamicString parseFloating(const char *input, StoreParseState *stat
 	}
 
 	bool hasDigits = false;
-	StoreDynamicString digitsString = parseDigits(input, &floatingState);
+	GString *digitsString = parseDigits(input, &floatingState);
 	if(digitsString != NULL) {
-		StoreAppendDynamicString(floatingString, "%s", StoreReadDynamicString(digitsString));
-		StoreFreeDynamicString(digitsString);
+		g_string_append_printf(floatingString, "%s", digitsString->str);
+		g_string_free(digitsString, true);
 		hasDigits = true;
 	}
 
@@ -690,26 +690,26 @@ static StoreDynamicString parseFloating(const char *input, StoreParseState *stat
 /**
  * exponential : ('e'|'E') ('+'|'-')? digits
  */
-static StoreDynamicString parseExponential(const char *input, StoreParseState *state)
+static GString *parseExponential(const char *input, StoreParseState *state)
 {
 	StoreParseState exponentialState;
 	exponentialState.position = state->position;
 	exponentialState.lastReport = NULL;
 
-	StoreDynamicString exponentialString = StoreCreateDynamicString();
+	GString *exponentialString = g_string_new("");
 
 	char c = input[exponentialState.position.index];
 	if(c == '\0') {
 		report(false, state, &exponentialState, "exponential", "unexpected end of input");
-		StoreFreeDynamicString(exponentialString);
+		g_string_free(exponentialString, true);
 		return NULL;
 	} else if(c != 'e' && c != 'E') {
 		report(false, state, &exponentialState, "exponential", "expected 'e' or 'E'");
-		StoreFreeDynamicString(exponentialString);
+		g_string_free(exponentialString, true);
 		return NULL;
 	}
 
-	StoreAppendDynamicString(exponentialString, "%c", c);
+	g_string_append_printf(exponentialString, "%c", c);
 
 	// eat that character
 	exponentialState.position.index++;
@@ -719,10 +719,10 @@ static StoreDynamicString parseExponential(const char *input, StoreParseState *s
 	c = input[exponentialState.position.index];
 	if(c == '\0') {
 		report(false, state, &exponentialState, "exponential", "unexpected end of input");
-		StoreFreeDynamicString(exponentialString);
+		g_string_free(exponentialString, true);
 		return NULL;
 	} else if(c == '+' || c == '-') {
-		StoreAppendDynamicString(exponentialString, "%c", c);
+		g_string_append_printf(exponentialString, "%c", c);
 
 		// eat that character
 		exponentialState.position.index++;
@@ -733,15 +733,15 @@ static StoreDynamicString parseExponential(const char *input, StoreParseState *s
 		}
 	}
 
-	StoreDynamicString digitsString = parseDigits(input, &exponentialState);
+	GString *digitsString = parseDigits(input, &exponentialState);
 	if(digitsString == NULL) {
 		report(false, state, &exponentialState, "exponential", "expected digits");
-		StoreFreeDynamicString(exponentialString);
+		g_string_free(exponentialString, true);
 		return NULL;
 	}
 
-	StoreAppendDynamicString(exponentialString, "%s", StoreReadDynamicString(digitsString));
-	StoreFreeDynamicString(digitsString);
+	g_string_append_printf(exponentialString, "%s", digitsString->str);
+	g_string_free(digitsString, true);
 
 	report(true, state, &exponentialState, "exponential", "parsed %s exponential", isNegative ? "negative" : "positive");
 	state->position = exponentialState.position;
@@ -754,14 +754,14 @@ static StoreDynamicString parseExponential(const char *input, StoreParseState *s
  * where
  * shortstringchar	: nonseparator
  */
-static StoreDynamicString parseShortString(const char *input, StoreParseState *state)
+static GString *parseShortString(const char *input, StoreParseState *state)
 {
 	StoreParseState shortStringState;
 	shortStringState.position = state->position;
 	shortStringState.lastReport = NULL;
 
 	int numChars = 0;
-	StoreDynamicString shortString = StoreCreateDynamicString();
+	GString *shortString = g_string_new("");
 	while(true) {
 		char c = input[shortStringState.position.index];
 		if(isSeparator(c)) {
@@ -770,14 +770,14 @@ static StoreDynamicString parseShortString(const char *input, StoreParseState *s
 
 		shortStringState.position.index++;
 		shortStringState.position.column++;
-		StoreAppendDynamicString(shortString, "%c", c);
+		g_string_append_printf(shortString, "%c", c);
 
 		numChars++;
 	}
 
 	if(numChars == 0) {
 		report(false, state, &shortStringState, "short string", "no short string characters parsed");
-		StoreFreeDynamicString(shortString);
+		g_string_free(shortString, true);
 		return NULL;
 	}
 
@@ -794,14 +794,14 @@ static StoreDynamicString parseShortString(const char *input, StoreParseState *s
  * 					| '\' escaped
  * 					| '\' 'u' hex hex hex hex
  */
-static StoreDynamicString parseLongString(const char *input, StoreParseState *state)
+static GString *parseLongString(const char *input, StoreParseState *state)
 {
 	StoreParseState longStringState;
 	longStringState.position = state->position;
 	longStringState.lastReport = NULL;
 
 	int numChars = 0;
-	StoreDynamicString longString = StoreCreateDynamicString();
+	GString *longString = g_string_new("");
 	while(true) {
 		char c = input[longStringState.position.index];
 		if(c == '\\') {
@@ -814,35 +814,35 @@ static StoreDynamicString parseLongString(const char *input, StoreParseState *st
 
 			switch(c) {
 				case '"':
-					StoreAppendDynamicString(longString, "\"");
+					g_string_append_printf(longString, "\"");
 				break;
 				case '\\':
-					StoreAppendDynamicString(longString, "\\");
+					g_string_append_printf(longString, "\\");
 				break;
 				case '/':
-					StoreAppendDynamicString(longString, "/");
+					g_string_append_printf(longString, "/");
 				break;
 				case 'b':
-					StoreAppendDynamicString(longString, "\b");
+					g_string_append_printf(longString, "\b");
 				break;
 				case 'f':
-					StoreAppendDynamicString(longString, "\f");
+					g_string_append_printf(longString, "\f");
 				break;
 				case 'n':
-					StoreAppendDynamicString(longString, "\n");
+					g_string_append_printf(longString, "\n");
 				break;
 				case 'r':
-					StoreAppendDynamicString(longString, "\r");
+					g_string_append_printf(longString, "\r");
 				break;
 				case 't':
-					StoreAppendDynamicString(longString, "\t");
+					g_string_append_printf(longString, "\t");
 				break;
 				case 'u':
 				{
 					char u1 = input[longStringState.position.index];
 					if(!isHex(u1)) {
 						report(false, state, &longStringState, "long string", "expected first hex number of escaped unicode character, but got '%c'", u1);
-						StoreFreeDynamicString(longString);
+						g_string_free(longString, true);
 						return NULL;
 					}
 					longStringState.position.index++;
@@ -851,7 +851,7 @@ static StoreDynamicString parseLongString(const char *input, StoreParseState *st
 					char u2 = input[longStringState.position.index];
 					if(!isHex(u2)) {
 						report(false, state, &longStringState, "long string", "expected second hex number of escaped unicode character, but got '%c'", u2);
-						StoreFreeDynamicString(longString);
+						g_string_free(longString, true);
 						return NULL;
 					}
 					longStringState.position.index++;
@@ -860,7 +860,7 @@ static StoreDynamicString parseLongString(const char *input, StoreParseState *st
 					char u3 = input[longStringState.position.index];
 					if(!isHex(u3)) {
 						report(false, state, &longStringState, "long string", "expected third hex number of escaped unicode character, but got '%c'", u3);
-						StoreFreeDynamicString(longString);
+						g_string_free(longString, true);
 						return NULL;
 					}
 					longStringState.position.index++;
@@ -869,7 +869,7 @@ static StoreDynamicString parseLongString(const char *input, StoreParseState *st
 					char u4 = input[longStringState.position.index];
 					if(!isHex(u4)) {
 						report(false, state, &longStringState, "long string", "expected fourth hex number of escaped unicode character, but got '%c'", u4);
-						StoreFreeDynamicString(longString);
+						g_string_free(longString, true);
 						return NULL;
 					}
 					longStringState.position.index++;
@@ -877,22 +877,22 @@ static StoreDynamicString parseLongString(const char *input, StoreParseState *st
 
 					char conversion[5] = {u1, u2, u3, u4, '\0'};
 					uint32_t codepoint = strtol(conversion, NULL, 16);
-					StoreDynamicString utf8 = StoreConvertUnicodeToUtf8(codepoint);
+					GString *utf8 = storeConvertUnicodeToUtf8(codepoint);
 
-					StoreAppendDynamicString(longString, "%s", StoreReadDynamicString(utf8));
-					StoreFreeDynamicString(utf8);
+					g_string_append_printf(longString, "%s", utf8->str);
+					g_string_free(utf8, true);
 				}
 				break;
 				default:
 					report(false, state, &longStringState, "long string", "expected escaped character, but got '%c'", c);
-					StoreFreeDynamicString(longString);
+					g_string_free(longString, true);
 					return NULL;
 				break;
 			}
 		} else if(c == '"' || c == '\0') {
 			break;
 		} else {
-			StoreAppendDynamicString(longString, "%c", c);
+			g_string_append_printf(longString, "%c", c);
 
 			longStringState.position.index++;
 			longStringState.position.column++;
@@ -946,19 +946,19 @@ static void report(bool success, StoreParseState *parentState, StoreParseState *
 	va_list va;
 	va_start(va, message);
 
-	StoreDynamicString messageString = StoreCreateDynamicString();
-	StoreAppendDynamicStringV(messageString, message, va);
+	GString *messageString = g_string_new("");
+	g_string_append_vprintf(messageString, message, va);
 
-	StoreParseReport *report = StoreAllocateMemoryType(StoreParseReport);
+	StoreParseReport *report = storeAllocateMemoryType(StoreParseReport);
 	report->success = success;
 	report->position = currentState->position;
 	report->type = type;
-	report->message = strdup(StoreReadDynamicString(messageString));
+	report->message = strdup(messageString->str);
 	report->lastSubReport = currentState->lastReport;
 	report->previousReport = parentState->lastReport;
 	parentState->lastReport = report;
 
-	StoreFreeDynamicString(messageString);
+	g_string_free(messageString, true);
 }
 
 static void freeParseReport(StoreParseReport *lastReport)

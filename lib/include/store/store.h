@@ -1,8 +1,9 @@
 #ifndef LIBSTORE_STORE_H
 #define LIBSTORE_STORE_H
 
+#include <glib.h>
+
 #include <store/api.h>
-#include <store/types.h>
 
 /**
  * Enumeration of the store value types
@@ -31,9 +32,9 @@ typedef union {
 	/** A floating point number value */
 	double floatValue;
 	/** A list value */
-	StoreList listValue;
+	GQueue *listValue;
 	/** An map value */
-	StoreMap mapValue;
+	GHashTable *mapValue;
 } StoreContent;
 
 /**
@@ -52,7 +53,7 @@ typedef struct Store {
  * @param stringValue	the content string
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateStringValue(const char *stringValue);
+LIBSTORE_API Store *storeCreateStringValue(const char *stringValue);
 
 /**
  * Creates an int store
@@ -60,7 +61,7 @@ LIBSTORE_API Store *StoreCreateStringValue(const char *stringValue);
  * @param intValue		the content int
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateIntValue(int intValue);
+LIBSTORE_API Store *storeCreateIntValue(int intValue);
 
 /**
  * Creates a float store
@@ -68,21 +69,21 @@ LIBSTORE_API Store *StoreCreateIntValue(int intValue);
  * @param floatValue	the content float
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateFloatValue(double floatValue);
+LIBSTORE_API Store *storeCreateFloatValue(double floatValue);
 
 /**
  * Creates an empty list store
  *
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateListValue();
+LIBSTORE_API Store *storeCreateListValue();
 
 /**
  * Creates an empty map store
  *
  * @result				the created store, must be freed with StoreFree
  */
-LIBSTORE_API Store *StoreCreateMapValue();
+LIBSTORE_API Store *storeCreateMapValue();
 
 /**
  * Returns the type name of a store
@@ -90,13 +91,13 @@ LIBSTORE_API Store *StoreCreateMapValue();
  * @param store	the store to retrieve the name of
  * @result		the type name of the store, doesn't need to be freed
  */
-LIBSTORE_API const char *StoreGetTypeName(Store *store);
+LIBSTORE_API const char *storeGetTypeName(Store *store);
 
 /**
  * Frees a store
  *
  * @param store		the store to free
  */
-LIBSTORE_API void StoreFree(Store *store);
+LIBSTORE_API void storeFree(Store *store);
 
 #endif

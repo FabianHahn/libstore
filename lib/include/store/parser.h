@@ -27,9 +27,9 @@ typedef struct {
 	StoreParseState state;
 } StoreParser;
 
-StoreParser *StoreCreateParser();
-void StoreResetParser(StoreParser *parser);
-void StoreFreeParser(StoreParser *parser);
-Store *StoreParse(StoreParser *parser, const char *input);
+StoreParser *storeCreateParser();
+void storeResetParser(StoreParser *parser);
+void storeFreeParser(StoreParser *parser);
+Store *storeParse(StoreParser *parser, const char *input);
 
 #endif

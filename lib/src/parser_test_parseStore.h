@@ -1,3 +1,8 @@
+#include <glib.h>
+#include <gtest/gtest.h>
+
+#include "store/store.h"
+
 TEST_F(Parser, parseStoreValue)
 {
 	const char *input = " 123 ";
@@ -9,7 +14,7 @@ TEST_F(Parser, parseStoreValue)
 	ASSERT_EQ(result->content.intValue, solution) << "StoreParse should parse the correct int value";
 	ASSERT_EQ(state.position.index, 5) << "state position index should have moved to end of input";
 	ASSERT_EQ(state.position.column, 6) << "state position column should have moved to end of input";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("store");
 }
@@ -25,19 +30,19 @@ TEST_F(Parser, parseStoreEntries)
 	Store *result = parseStore(input, &state);
 	ASSERT_TRUE(result != NULL) << "StoreParse should not return NULL";
 	ASSERT_EQ(result->type, STORE_MAP) << "StoreParse should return a store of type map";
-	ASSERT_EQ(StoreGetMapSize(result->content.mapValue), 2) << "parsed map should have two entries";
+	ASSERT_EQ(g_hash_table_size(result->content.mapValue), 2) << "parsed map should have two entries";
 	ASSERT_EQ(state.position.index, 32) << "state position index should have moved to end of input";
 	ASSERT_EQ(state.position.column, 33) << "state position column should have moved to end of input";
 
-	StoreMapIterator iter = StoreCreateMapIterator(result->content.mapValue);
-	ASSERT_TRUE(StoreIsMapIteratorValid(iter)) << "store map iterator should be valid";
+	GHashTableIter iter;
+	g_hash_table_iter_init(&iter, result->content.mapValue);
 
 	int hits = 0;
-	for(; StoreIsMapIteratorValid(iter); StoreForwardMapIterator(iter)) {
-		const char *key = StoreGetCurrentMapIteratorKey(iter);
-		ASSERT_TRUE(key != NULL) << "StoreGetCurrentMapIteratorKey should not return NULL when iterator is still valid";
-		Store *value = StoreGetCurrentMapIteratorValue(iter);
-		ASSERT_TRUE(value != NULL) << "StoreGetCurrentMapIteratorValue should not return NULL when iterator is still valid";
+	const char *key;
+	Store *value;
+	while(g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
+		ASSERT_TRUE(key != NULL) << "iterator key should not be NULL when iterator is still valid";
+		ASSERT_TRUE(value != NULL) << "iterator key should not be NULL when iterator is still valid";
 
 		std::string stdStringKey(key);
 		if(stdStringKey == solution_key1) {
@@ -52,11 +57,10 @@ TEST_F(Parser, parseStoreEntries)
 			ASSERT_TRUE(false) << "invalid parsed entry with key: " << stdStringKey;
 		}
 	}
-	StoreFreeMapIterator(iter);
 
 	ASSERT_EQ(hits, 2) << "loop body should have hit two times";
 
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("store");
 }

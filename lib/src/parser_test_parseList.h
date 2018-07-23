@@ -1,3 +1,8 @@
+#include <glib.h>
+#include <gtest/gtest.h>
+
+#include "store/store.h"
+
 TEST_F(Parser, parseListEmpty)
 {
 	const char *input = "()";
@@ -5,8 +10,8 @@ TEST_F(Parser, parseListEmpty)
 	Store *result = parseList(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
-	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parsed list should be empty";
-	StoreFree(result);
+	ASSERT_EQ(g_queue_get_length(result->content.listValue), 0) << "parsed list should be empty";
+	storeFree(result);
 
 	assertReportSuccess("list");
 }
@@ -18,8 +23,8 @@ TEST_F(Parser, parseListEmptyBrackets)
 	Store *result = parseList(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
-	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parsed list should be empty";
-	StoreFree(result);
+	ASSERT_EQ(g_queue_get_length(result->content.listValue), 0) << "parsed list should be empty";
+	storeFree(result);
 
 	assertReportSuccess("list");
 }
@@ -31,8 +36,8 @@ TEST_F(Parser, parseListEmptyGap)
 	Store *result = parseList(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
-	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parsed list should be empty";
-	StoreFree(result);
+	ASSERT_EQ(g_queue_get_length(result->content.listValue), 0) << "parsed list should be empty";
+	storeFree(result);
 
 	assertReportSuccess("list");
 }
@@ -48,25 +53,25 @@ TEST_F(Parser, parseListMultipleElements)
 	Store *result = parseList(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
-	ASSERT_EQ(StoreGetListSize(result->content.listValue), 4) << "parsed list should have correct size";
+	ASSERT_EQ(g_queue_get_length(result->content.listValue), 4) << "parsed list should have correct size";
 
-	Store *solutionPart1 = StoreGetListElement(result->content.listValue, 0);
+	Store *solutionPart1 = (Store *) g_queue_peek_nth(result->content.listValue, 0);
 	ASSERT_EQ(solutionPart1->type, STORE_STRING) << "first solution element should be a store of type string";
 	ASSERT_STREQ(solutionPart1->content.stringValue, solution1) << "first solution value should be correct";
 
-	Store *solutionPart2 = StoreGetListElement(result->content.listValue, 1);
+	Store *solutionPart2 = (Store *) g_queue_peek_nth(result->content.listValue, 1);
 	ASSERT_EQ(solutionPart2->type, STORE_STRING) << "second solution element should be a store of type string";
 	ASSERT_STREQ(solutionPart2->content.stringValue, solution2) << "second solution value should be correct";
 
-	Store *solutionPart3 = StoreGetListElement(result->content.listValue, 2);
+	Store *solutionPart3 = (Store *) g_queue_peek_nth(result->content.listValue, 2);
 	ASSERT_EQ(solutionPart3->type, STORE_STRING) << "third solution element should be a store of type string";
 	ASSERT_STREQ(solutionPart3->content.stringValue, solution3) << "third solution value should be correct";
 
-	Store *solutionPart4 = StoreGetListElement(result->content.listValue, 3);
+	Store *solutionPart4 = (Store *) g_queue_peek_nth(result->content.listValue, 3);
 	ASSERT_EQ(solutionPart4->type, STORE_INT) << "fourth solution element should be a store of type int";
 	ASSERT_EQ(solutionPart4->content.intValue, solution4) << "fourth solution value should be correct";
 
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("list");
 }
@@ -78,13 +83,13 @@ TEST_F(Parser, parseListNested)
 	Store *result = parseList(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseList should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseList should return a store of type list";
-	ASSERT_EQ(StoreGetListSize(result->content.listValue), 1) << "parsed list should be empty";
+	ASSERT_EQ(g_queue_get_length(result->content.listValue), 1) << "parsed list should be empty";
 
-	Store *nestedResult = StoreGetListElement(result->content.listValue, 0);
+	Store *nestedResult = (Store *) g_queue_peek_nth(result->content.listValue, 0);
 	ASSERT_EQ(nestedResult->type, STORE_LIST) << "nested list element should be another store of type list";
-	ASSERT_EQ(StoreGetListSize(nestedResult->content.listValue), 0) << "nested list should be empty";
+	ASSERT_EQ(g_queue_get_length(nestedResult->content.listValue), 0) << "nested list should be empty";
 
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("list");
 }

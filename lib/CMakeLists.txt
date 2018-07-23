@@ -1,9 +1,6 @@
 include(GenerateExportHeader)
 
 set(LIBSTORE_LIB_SRC
-	src/types/stl/list.cpp
-	src/types/stl/map.cpp
-	src/types/stl/string.cpp
 	src/encoding.c
 	src/memory.c
 	src/parser.c
@@ -14,7 +11,6 @@ set(LIBSTORE_LIB_SRC
 	include/store/parser.h
 	include/store/report.h
 	include/store/store.h
-	include/store/types.h
 )
 
 set(LIBSTORE_LIB_TEST_SRC
@@ -31,6 +27,7 @@ set(LIBSTORE_LIB_TEST_SRC
 
 if(LIBSTORE_BUILD_SHARED)
 	add_library(store SHARED ${LIBSTORE_LIB_SRC})
+	target_link_libraries(store fakeglib)
 	set_property(TARGET store PROPERTY CXX_STANDARD 11)
 	
 	generate_export_header(store
@@ -51,6 +48,7 @@ endif()
 
 if(LIBSTORE_BUILD_STATIC)
 	add_library(storestatic STATIC ${LIBSTORE_LIB_SRC})
+	target_link_libraries(storestatic fakeglibstatic)
 	set_property(TARGET storestatic PROPERTY CXX_STANDARD 11)
 	target_compile_definitions(storestatic PUBLIC LIBSTORE_STATIC)
 	

@@ -1,3 +1,8 @@
+#include <glib.h>
+#include <gtest/gtest.h>
+
+#include "store/store.h"
+
 TEST_F(Parser, parseValuePrefixInt)
 {
 	const char *input = "123";
@@ -7,7 +12,7 @@ TEST_F(Parser, parseValuePrefixInt)
 	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
 	ASSERT_EQ(result->type, STORE_INT) << "parseValue should return a store of type int";
 	ASSERT_EQ(result->content.intValue, solution) << "parseValue should parse the correct int value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("value");
 }
@@ -21,7 +26,7 @@ TEST_F(Parser, parseValuePrefixFloat)
 	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseValue should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseValue should parse the correct float value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("value");
 }
@@ -35,7 +40,7 @@ TEST_F(Parser, parseValuePrefixString)
 	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseValue should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseValue should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("value");
 }
@@ -49,7 +54,7 @@ TEST_F(Parser, parseValuePrefixFloatExp)
 	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
 	ASSERT_EQ(result->type, STORE_FLOAT) << "parseValue should return a store of type float";
 	ASSERT_EQ(result->content.floatValue, solution) << "parseValue should parse the correct float value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("value");
 }
@@ -65,7 +70,7 @@ TEST_F(Parser, parseValueStringOffset)
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseValue should parse the correct string value";
 	ASSERT_EQ(state.position.index, 19) << "index should not have moved past suffix offset";
 	ASSERT_EQ(state.position.column, 20) << "column should not have moved past suffix offset";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("value");
 }
@@ -78,8 +83,8 @@ TEST_F(Parser, parseValueEmptyList)
 	Store *result = parseValue(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
 	ASSERT_EQ(result->type, STORE_LIST) << "parseValue should return a store of type list";
-	ASSERT_EQ(StoreGetListSize(result->content.listValue), 0) << "parseValue list should be empty";
-	StoreFree(result);
+	ASSERT_EQ(g_queue_get_length(result->content.listValue), 0) << "parseValue list should be empty";
+	storeFree(result);
 
 	assertReportSuccess("value");
 }
@@ -91,8 +96,8 @@ TEST_F(Parser, parseValueEmptyMap)
 	Store *result = parseValue(input, &state);
 	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
 	ASSERT_EQ(result->type, STORE_MAP) << "parseValue should return a store of type map";
-	ASSERT_EQ(StoreGetMapSize(result->content.listValue), 0) << "parseValue map should be empty";
-	StoreFree(result);
+	ASSERT_EQ(g_hash_table_size(result->content.mapValue), 0) << "parseValue map should be empty";
+	storeFree(result);
 
 	assertReportSuccess("value");
 }

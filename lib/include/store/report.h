@@ -3,6 +3,6 @@
 
 #include <store/parser.h>
 
-char *StoreGenerateParseReport(StoreParser *parser);
+char *storeGenerateParseReport(StoreParser *parser);
 
 #endif

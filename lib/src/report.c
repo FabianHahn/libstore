@@ -1,23 +1,25 @@
+#include <stdbool.h> // bool
 #include <stddef.h> // NULL
 #include <string.h> // strdup
 
+#include <glib.h>
+
 #include "store/report.h"
-#include "store/types.h"
 
-static void appendParseReport(StoreParseReport *report, StoreDynamicString reportString, int level);
-static void appendNTimes(StoreDynamicString string, int n, const char *what);
+static void appendParseReport(StoreParseReport *report, GString *reportString, int level);
+static void appendNTimes(GString *string, int n, const char *what);
 
-char *StoreGenerateParseReport(StoreParser *parser)
+char *storeGenerateParseReport(StoreParser *parser)
 {
-	StoreDynamicString reportString = StoreCreateDynamicString();
+	GString *reportString = g_string_new("");
 	appendParseReport(parser->state.lastReport, reportString, 0);
 
-	char *result = strdup(StoreReadDynamicString(reportString));
-	StoreFreeDynamicString(reportString);
+	char *result = reportString->str;
+	g_string_free(reportString, false);
 	return result;
 }
 
-static void appendParseReport(StoreParseReport *report, StoreDynamicString reportString, int level)
+static void appendParseReport(StoreParseReport *report, GString *reportString, int level)
 {
 	if(report == NULL) {
 		return;
@@ -27,17 +29,17 @@ static void appendParseReport(StoreParseReport *report, StoreDynamicString repor
 
 	appendNTimes(reportString, level, "\t");
 	if(report->success) {
-		StoreAppendDynamicString(reportString, "successfully parsed %s at line %d, column %d: %s\n", report->type, report->position.line, report->position.column, report->message);
+		g_string_append_printf(reportString, "successfully parsed %s at line %d, column %d: %s\n", report->type, report->position.line, report->position.column, report->message);
 	} else {
-		StoreAppendDynamicString(reportString, "failed to parse %s at line %d, column %d: %s\n", report->type, report->position.line, report->position.column, report->message);
+		g_string_append_printf(reportString, "failed to parse %s at line %d, column %d: %s\n", report->type, report->position.line, report->position.column, report->message);
 	}
 
 	appendParseReport(report->lastSubReport, reportString, level + 1);
 }
 
-static void appendNTimes(StoreDynamicString string, int n, const char *what)
+static void appendNTimes(GString *string, int n, const char *what)
 {
 	for(int i = 0; i < n; i++) {
-		StoreAppendDynamicString(string, what);
+		g_string_append_printf(string, what);
 	}
 }

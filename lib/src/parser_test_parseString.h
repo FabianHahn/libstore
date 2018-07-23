@@ -1,3 +1,8 @@
+#include <glib.h>
+#include <gtest/gtest.h>
+
+#include "store/store.h"
+
 TEST_F(Parser, parseStringSimple)
 {
 	const char *input = "simplestring";
@@ -7,7 +12,7 @@ TEST_F(Parser, parseStringSimple)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -21,7 +26,7 @@ TEST_F(Parser, parseStringSimpleUnicode)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -37,7 +42,7 @@ TEST_F(Parser, parseStringSimpleInterrupted)
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
 	ASSERT_EQ(state.position.index, 3) << "state position index should have moved to delimiter";
 	ASSERT_EQ(state.position.column, 4) << "state position column should have moved to delimiter";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -54,7 +59,7 @@ TEST_F(Parser, parseStringSimpleGap)
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
 	ASSERT_EQ(state.position.index, 5) << "state position index should have moved to delimiter";
 	ASSERT_EQ(state.position.column, 6) << "state position column should have moved to delimiter";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -68,7 +73,7 @@ TEST_F(Parser, parseStringLongButSimple)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -82,7 +87,7 @@ TEST_F(Parser, parseStringLongNotSimple)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -96,7 +101,7 @@ TEST_F(Parser, parseStringLongEscaped)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -110,7 +115,7 @@ TEST_F(Parser, parseStringLongEncodedUnicode)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -127,7 +132,7 @@ TEST_F(Parser, parseStringLongWithNewlines)
 	ASSERT_EQ(state.position.index, 42) << "index should not have wrapped around over newlines";
 	ASSERT_EQ(state.position.column, 15) << "column should have wrapped around over newlines";
 	ASSERT_EQ(state.position.line, 3) << "line should have increased over newlines";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
@@ -141,7 +146,7 @@ TEST_F(Parser, parseStringLongEmpty)
 	ASSERT_TRUE(result != NULL) << "parseString should not return NULL";
 	ASSERT_EQ(result->type, STORE_STRING) << "parseString should return a store of type string";
 	ASSERT_STREQ(result->content.stringValue, solution) << "parseString should parse the correct string value";
-	StoreFree(result);
+	storeFree(result);
 
 	assertReportSuccess("string");
 }
