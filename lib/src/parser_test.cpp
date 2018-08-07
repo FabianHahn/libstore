@@ -18,6 +18,7 @@ public:
 		state.position.index = 0;
 		state.position.line = 1;
 		state.position.column = 1;
+		state.depth = 0;
 		state.reports = g_queue_new();
 	}
 

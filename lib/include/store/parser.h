@@ -20,6 +20,7 @@ typedef struct StoreParseReportStruct {
 
 typedef struct StoreParseStateStruct {
 	StoreParseStatePosition position;
+	int depth;
 	/** list of (StoreParseReport *) */
 	GQueue *reports;
 } StoreParseState;

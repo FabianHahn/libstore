@@ -14,6 +14,8 @@ typedef struct {
 	Store *value;
 } Entry;
 
+static const int maxDepth = 1000;
+
 static Store *parseStore(const char *input, StoreParseState *state);
 static Store *parseValue(const char *input, StoreParseState *state);
 static Store *parseString(const char *input, StoreParseState *state);
@@ -34,7 +36,7 @@ static char parseTerminal(const char *input, StoreParseState *state);
 static char parseHex(const char *input, StoreParseState *state);
 static char parseDigit(const char *input, StoreParseState *state);
 static char parseDelimiter(const char *input, StoreParseState *state);
-static StoreParseState *createParseState(StoreParseStatePosition position);
+static StoreParseState *createParseState(StoreParseStatePosition position, int depth);
 static void freeParseState(StoreParseState *state);
 static void reportAndFreeState(bool success, StoreParseState *parentState, StoreParseState *state, const char *type, const char *message, ...);
 static void freeParseReportPointer(void *parseReportPointer);
@@ -48,6 +50,7 @@ StoreParser *storeCreateParser()
 	parser->state.position.index = 0;
 	parser->state.position.line = 1;
 	parser->state.position.column = 1;
+	parser->state.depth = 0;
 	parser->state.reports = g_queue_new();
 	return parser;
 }
@@ -57,6 +60,7 @@ void storeResetParser(StoreParser *parser)
 	parser->state.position.index = 0;
 	parser->state.position.line = 1;
 	parser->state.position.column = 1;
+	parser->state.depth = 0;
 	g_queue_free_full(parser->state.reports, freeParseReportPointer);
 	parser->state.reports = g_queue_new();
 }
@@ -79,7 +83,7 @@ Store *storeParse(StoreParser *parser, const char *input)
  */
 static Store *parseStore(const char *input, StoreParseState *state)
 {
-	StoreParseState *storeState = createParseState(state->position);
+	StoreParseState *storeState = createParseState(state->position, state->depth + 1);
 
 	Store *valueStore = parseValue(input, storeState);
 	if(valueStore != NULL) {
@@ -93,7 +97,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
 			}
 		}
 
-		StoreParseState *valueState = createParseState(storeState->position);
+		StoreParseState *valueState = createParseState(storeState->position, state->depth + 1);
 		reportAndFreeState(false, storeState, valueState, "value", "expected termination by end of input, but got '%c'", c);
 		storeFree(valueStore);
 	}
@@ -111,7 +115,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
 			}
 		}
 
-		StoreParseState *entriesState = createParseState(storeState->position);
+		StoreParseState *entriesState = createParseState(storeState->position, state->depth + 1);
 		reportAndFreeState(false, storeState, entriesState, "entries", "expected termination by end of input, but got '%c'", c);
 		storeFree(entriesStore);
 	}
@@ -129,7 +133,7 @@ static Store *parseStore(const char *input, StoreParseState *state)
  */
 static Store *parseValue(const char *input, StoreParseState *state)
 {
-	StoreParseState *valueState = createParseState(state->position);
+	StoreParseState *valueState = createParseState(state->position, state->depth + 1);
 
 	char c = parseTerminal(input, valueState);
 	if(c == '\0') {
@@ -147,7 +151,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			reportAndFreeState(true, state, valueState, "value", "parsed int");
 			return intStore;
 		} else {
-			StoreParseState *intState = createParseState(valueState->position);
+			StoreParseState *intState = createParseState(valueState->position, state->depth + 1);
 			reportAndFreeState(false, valueState, intState, "int", "expected termination by separator but got '%c'", c);
 			storeFree(intStore);
 		}
@@ -162,7 +166,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			reportAndFreeState(true, state, valueState, "value", "parsed float");
 			return floatStore;
 		} else {
-			StoreParseState *floatState = createParseState(valueState->position);
+			StoreParseState *floatState = createParseState(valueState->position, state->depth + 1);
 			reportAndFreeState(false, valueState, floatState, "float", "expected termination by separator but got '%c'", c);
 			storeFree(floatStore);
 		}
@@ -177,7 +181,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			reportAndFreeState(true, state, valueState, "value", "parsed string");
 			return stringStore;
 		} else {
-			StoreParseState *stringState = createParseState(valueState->position);
+			StoreParseState *stringState = createParseState(valueState->position, state->depth + 1);
 			reportAndFreeState(false, valueState, stringState, "string", "expected termination by separator but got '%c'", c);
 			storeFree(stringStore);
 		}
@@ -192,7 +196,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			reportAndFreeState(true, state, valueState, "value", "parsed list");
 			return listStore;
 		} else {
-			StoreParseState *listState = createParseState(valueState->position);
+			StoreParseState *listState = createParseState(valueState->position, state->depth + 1);
 			reportAndFreeState(false, valueState, listState, "list", "expected termination by separator but got '%c'", c);
 			storeFree(listStore);
 		}
@@ -207,7 +211,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
 			reportAndFreeState(true, state, valueState, "value", "parsed map");
 			return mapStore;
 		} else {
-			StoreParseState *mapState = createParseState(valueState->position);
+			StoreParseState *mapState = createParseState(valueState->position, state->depth + 1);
 			reportAndFreeState(false, valueState, mapState, "map", "expected termination by separator but got '%c'", c);
 			storeFree(mapStore);
 		}
@@ -223,7 +227,7 @@ static Store *parseValue(const char *input, StoreParseState *state)
  */
 static Store *parseString(const char *input, StoreParseState *state)
 {
-	StoreParseState *stringState = createParseState(state->position);
+	StoreParseState *stringState = createParseState(state->position, state->depth + 1);
 
 	Store *stringStore = NULL;
 
@@ -276,7 +280,7 @@ static Store *parseString(const char *input, StoreParseState *state)
  */
 static Store *parseInt(const char *input, StoreParseState *state)
 {
-	StoreParseState *intState = createParseState(state->position);
+	StoreParseState *intState = createParseState(state->position, state->depth + 1);
 
 	GString *intString = g_string_new("");
 
@@ -314,7 +318,7 @@ static Store *parseInt(const char *input, StoreParseState *state)
  */
 static Store *parseFloat(const char *input, StoreParseState *state)
 {
-	StoreParseState *floatState = createParseState(state->position);
+	StoreParseState *floatState = createParseState(state->position, state->depth + 1);
 
 	GString *floatString = g_string_new("");
 
@@ -369,7 +373,12 @@ static Store *parseFloat(const char *input, StoreParseState *state)
  */
 static Store *parseList(const char *input, StoreParseState *state)
 {
-	StoreParseState *listState = createParseState(state->position);
+	StoreParseState *listState = createParseState(state->position, state->depth + 1);
+
+	if(listState->depth >= maxDepth) {
+		reportAndFreeState(false, state, listState, "list", "reached maximum depth of %d", maxDepth);
+		return NULL;
+	}
 
 	Store *listStore = NULL;
 
@@ -442,7 +451,7 @@ static Store *parseList(const char *input, StoreParseState *state)
  */
 static Store *parseElements(const char *input, StoreParseState *state)
 {
-	StoreParseState *elementsState = createParseState(state->position);
+	StoreParseState *elementsState = createParseState(state->position, state->depth + 1);
 
 	int numElements = 0;
 	Store *listStore = storeCreateListValue();
@@ -466,7 +475,12 @@ static Store *parseElements(const char *input, StoreParseState *state)
  */
 static Store *parseMap(const char *input, StoreParseState *state)
 {
-	StoreParseState *mapState = createParseState(state->position);
+	StoreParseState *mapState = createParseState(state->position, state->depth + 1);
+
+	if(mapState->depth >= maxDepth) {
+		reportAndFreeState(false, state, mapState, "map", "reached maximum depth of %d", maxDepth);
+		return NULL;
+	}
 
 	char c = input[mapState->position.index];
 	if(c != '{') {
@@ -509,7 +523,7 @@ static Store *parseMap(const char *input, StoreParseState *state)
  */
 static Store *parseEntries(const char *input, StoreParseState *state)
 {
-	StoreParseState *entriesState = createParseState(state->position);
+	StoreParseState *entriesState = createParseState(state->position, state->depth + 1);
 
 	int numEntries = 0;
 	Store *entriesStore = storeCreateMapValue();
@@ -535,7 +549,7 @@ static Store *parseEntries(const char *input, StoreParseState *state)
  */
 static Entry *parseEntry(const char *input, StoreParseState *state)
 {
-	StoreParseState *entryState = createParseState(state->position);
+	StoreParseState *entryState = createParseState(state->position, state->depth + 1);
 
 	char c = parseTerminal(input, entryState);
 	if(c == '\0') {
@@ -586,7 +600,7 @@ static Entry *parseEntry(const char *input, StoreParseState *state)
  */
 static GString *parseDigits(const char *input, StoreParseState *state)
 {
-	StoreParseState *digitsState = createParseState(state->position);
+	StoreParseState *digitsState = createParseState(state->position, state->depth + 1);
 
 	GString *digitsString = g_string_new("");
 
@@ -621,7 +635,7 @@ static GString *parseDigits(const char *input, StoreParseState *state)
  */
 static GString *parseFloating(const char *input, StoreParseState *state)
 {
-	StoreParseState *floatingState = createParseState(state->position);
+	StoreParseState *floatingState = createParseState(state->position, state->depth + 1);
 
 	GString *floatingString = g_string_new("");
 
@@ -656,7 +670,7 @@ static GString *parseFloating(const char *input, StoreParseState *state)
  */
 static GString *parseExponential(const char *input, StoreParseState *state)
 {
-	StoreParseState *exponentialState = createParseState(state->position);
+	StoreParseState *exponentialState = createParseState(state->position, state->depth + 1);
 
 	GString *exponentialString = g_string_new("");
 
@@ -718,7 +732,7 @@ static GString *parseExponential(const char *input, StoreParseState *state)
  */
 static GString *parseShortString(const char *input, StoreParseState *state)
 {
-	StoreParseState *shortStringState = createParseState(state->position);
+	StoreParseState *shortStringState = createParseState(state->position, state->depth + 1);
 
 	int numChars = 0;
 	GString *shortString = g_string_new("");
@@ -756,7 +770,7 @@ static GString *parseShortString(const char *input, StoreParseState *state)
  */
 static GString *parseLongString(const char *input, StoreParseState *state)
 {
-	StoreParseState *longStringState = createParseState(state->position);
+	StoreParseState *longStringState = createParseState(state->position, state->depth + 1);
 
 	int numChars = 0;
 	GString *longString = g_string_new("");
@@ -876,7 +890,7 @@ static GString *parseLongString(const char *input, StoreParseState *state)
 
 static char parseTerminal(const char *input, StoreParseState *state)
 {
-	StoreParseState *terminalState = createParseState(state->position);
+	StoreParseState *terminalState = createParseState(state->position, state->depth + 1);
 
 	int numDelimiters = 0;
 	while(true) {
@@ -903,10 +917,11 @@ static char parseTerminal(const char *input, StoreParseState *state)
 	return terminal;
 }
 
-static StoreParseState *createParseState(StoreParseStatePosition position)
+static StoreParseState *createParseState(StoreParseStatePosition position, int depth)
 {
 	StoreParseState *state = storeAllocateMemoryType(StoreParseState);
 	state->position = position;
+	state->depth = depth;
 	state->reports = g_queue_new();
 	return state;
 }
