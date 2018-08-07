@@ -59,6 +59,48 @@ TEST_F(Parser, parseValuePrefixFloatExp)
 	assertReportSuccess("value");
 }
 
+TEST_F(Parser, parseValueMinus)
+{
+	const char *input = "-";
+	const char *solution = "-";
+
+	Store *result = parseValue(input, &state);
+	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
+	ASSERT_EQ(result->type, STORE_STRING) << "parseValue should return a store of type string";
+	ASSERT_STREQ(result->content.stringValue, solution) << "parseValue should parse the correct string value";
+	storeFree(result);
+
+	assertReportSuccess("value");
+}
+
+TEST_F(Parser, parseValueMinusInt)
+{
+	const char *input = "-1";
+	int solution = -1;
+
+	Store *result = parseValue(input, &state);
+	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
+	ASSERT_EQ(result->type, STORE_INT) << "parseValue should return a store of type int";
+	ASSERT_EQ(result->content.intValue, solution) << "parseValue should parse the correct int value";
+	storeFree(result);
+
+	assertReportSuccess("value");
+}
+
+TEST_F(Parser, parseValueMinusFloat)
+{
+	const char *input = "-1.";
+	double solution = -1.0;
+
+	Store *result = parseValue(input, &state);
+	ASSERT_TRUE(result != NULL) << "parseValue should not return NULL";
+	ASSERT_EQ(result->type, STORE_FLOAT) << "parseValue should return a store of type float";
+	ASSERT_EQ(result->content.floatValue, solution) << "parseValue should parse the correct float value";
+	storeFree(result);
+
+	assertReportSuccess("value");
+}
+
 TEST_F(Parser, parseValueStringOffset)
 {
 	const char *input = "  ,;  \"hello world\" ;,  ";
@@ -74,7 +116,6 @@ TEST_F(Parser, parseValueStringOffset)
 
 	assertReportSuccess("value");
 }
-
 
 TEST_F(Parser, parseValueEmptyList)
 {

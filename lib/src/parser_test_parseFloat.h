@@ -244,6 +244,30 @@ TEST_F(Parser, parseFloatInvalidOffset)
 	assertReportFailure("float");
 }
 
+TEST_F(Parser, parseFloatInvalidMinus)
+{
+	const char *input = "-";
+
+	Store *result = parseFloat(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("float");
+}
+
+TEST_F(Parser, parseFloatInvalidNegative)
+{
+	const char *input = "-asdf";
+
+	Store *result = parseFloat(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("float");
+}
+
 TEST_F(Parser, parseFloatInvalidPureFractional)
 {
 	const char *input = ".456";

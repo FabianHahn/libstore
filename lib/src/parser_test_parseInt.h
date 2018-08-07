@@ -99,6 +99,18 @@ TEST_F(Parser, parseIntInvalidOffset)
 	assertReportFailure("int");
 }
 
+TEST_F(Parser, parseIntInvalidMinus)
+{
+	const char *input = "-";
+
+	Store *result = parseInt(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseInt should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("int");
+}
+
 TEST_F(Parser, parseIntInvalidNegative)
 {
 	const char *input = "-asdf";
