@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 		Store *store = storeParse(parser, contents);
 		free(contents);
 
-		char *report = storeGenerateParseReport(parser);
+		char *report = storeGenerateParseReport(parser, 10);
 		puts(report);
 		free(report);
 

@@ -24,7 +24,7 @@ public:
 
 	virtual void TearDown() {
 		StoreParser parser{state};
-		char *report = storeGenerateParseReport(&parser);
+		char *report = storeGenerateParseReport(&parser, 10);
 		std::cout << report << std::endl;
 		free(report);
 

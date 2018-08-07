@@ -3,6 +3,6 @@
 
 #include <store/parser.h>
 
-char *storeGenerateParseReport(StoreParser *parser);
+char *storeGenerateParseReport(StoreParser *parser, int maxDepth);
 
 #endif
