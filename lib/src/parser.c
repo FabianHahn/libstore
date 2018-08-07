@@ -836,6 +836,11 @@ static GString *parseLongString(const char *input, StoreParseState *state)
 					char conversion[5] = {u1, u2, u3, u4, '\0'};
 					uint32_t codepoint = strtol(conversion, NULL, 16);
 					GString *utf8 = storeConvertUnicodeToUtf8(codepoint);
+					if(utf8 == NULL) {
+						reportAndFreeState(false, state, longStringState, "long string", "failed to convert unicode code point %x to UTF-8", codepoint);
+						g_string_free(longString, true);
+						return NULL;
+					}
 
 					g_string_append_printf(longString, "%s", utf8->str);
 					g_string_free(utf8, true);

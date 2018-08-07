@@ -222,3 +222,15 @@ TEST_F(Parser, parseStringInvalidEncoded)
 
 	assertReportFailure("string");
 }
+
+TEST_F(Parser, parseStringInvalidEncodedSurrogate)
+{
+	const char *input = "\"\\uD801\"";
+
+	Store *result = parseString(input, &state);
+	ASSERT_TRUE(result == NULL) << "parseString should return NULL";
+	ASSERT_EQ(state.position.index, 0) << "parse state index should not have changed";
+	ASSERT_EQ(state.position.column, 1) << "parse state column should not have changed";
+
+	assertReportFailure("string");
+}
